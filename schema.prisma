@@ -1,0 +1,36 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Todo {
+  id        Int      @id @default(autoincrement())
+  title     String
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model Graduate {
+  id                Int      @id @default(autoincrement())
+  student_id        String?  @unique
+  prefix_th         String?
+  first_name_th     String?
+  last_name_th      String?
+  prefix_en         String?
+  first_name_en     String?
+  last_name_en      String?
+  barcode           String?  @unique
+  gender            String?
+  citizen_id        String?  @unique
+  passport_no       String?  @unique
+  ccr_barcode       String?  @unique
+  do_survey         Boolean? @default(false)
+  reading_first_name String?
+  reading_last_name  String?
+}
+
+
