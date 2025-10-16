@@ -34,6 +34,9 @@ Before cloning, make sure you have these installed:
 ```bash
 git clone https://github.com/<your-username>/<your-repo>.git
 cd <your-repo>
+```
+
+```bash
 2️⃣ Install Dependencies
 bash
 Copy code
@@ -43,10 +46,12 @@ Create a .env.local file in the root directory:
 
 bash
 Copy code
-DATABASE_URL="postgresql://postgres:123456@localhost:5432/CCR?schema=CCR"
+DATABASE_URL="postgresql://{username}:{password}@localhost:5432/{dbname}?schema={schemaname}"
 🧠 Change the username, password, database, or schema name as needed.
 Example: if your DB name is mydb, use postgresql://postgres:123456@localhost:5432/mydb?schema=public.
+```
 
+```bash
 4️⃣ Prisma Setup
 bash
 Copy code
@@ -58,6 +63,9 @@ npm run db:push
 
 # Optional: open Prisma Studio (visual database explorer)
 npm run db:studio
+```
+
+```bash
 5️⃣ Start the Development Server
 bash
 Copy code
@@ -90,4 +98,13 @@ This project uses Vitest for testing.
 bash
 Copy code
 npm run test
+```
+
+🧪 Reset Postgres schema
+
+```bash
+npx prisma migrate reset --force
+npx prisma migrate dev --name init
+npx prisma generate
+npx prisma studio
 ```
