@@ -7,30 +7,99 @@ generator client {
   provider = "prisma-client-js"
 }
 
-model Todo {
-  id        Int      @id @default(autoincrement())
-  title     String
-  completed Boolean  @default(false)
-  createdAt DateTime @default(now())
-}
-
 model Graduate {
-  id                Int      @id @default(autoincrement())
-  student_id        String?  @unique
-  prefix_th         String?
-  first_name_th     String?
-  last_name_th      String?
-  prefix_en         String?
-  first_name_en     String?
-  last_name_en      String?
-  barcode           String?  @unique
-  gender            String?
-  citizen_id        String?  @unique
-  passport_no       String?  @unique
-  ccr_barcode       String?  @unique
-  do_survey         Boolean? @default(false)
-  reading_first_name String?
-  reading_last_name  String?
+  id                 Int      @id @default(autoincrement())
+  student_id         String?  @unique
+  prefix_th          String?
+  first_name_th      String?
+  last_name_th       String?
+  prefix_en          String?
+  first_name_en      String?
+  last_name_en       String?
+  barcode            String?
+  gender             String?
+  citizen_id         String?  @unique
+  passport_no        String?  @unique
+  ccr_barcode        String?  @unique
+  do_survey          Boolean? @default(false)
+  karaoke_first_name String?
+  karaoke_last_name  String?
+  diplomas           Diploma[]
 }
 
+model Diploma {
+  id               Int      @id @default(autoincrement())
+  degree_th        String?
+  degree_en        String?
+  major_th         String?
+  major_en         String?
+  faculty_code     String?
+  honor            String?
+  honor_code       Int?
+  degree_code      Int?
+  student_id       String?
+  graduate_id      Int?
+  barcode          String?
+  extra_attend     Boolean?
+  eligible_receive Boolean?
+  order_no         Int?
+  order_display    String?
+  rehearsal_seat_no String?
+  graduate         Graduate? @relation(fields: [graduate_id], references: [id])
+  groups           Group[]
+}
 
+model User {
+  id             Int     @id @default(autoincrement())
+  username       String  @unique
+  name           String?
+  role           String?
+  faculty_code   String?
+  from_cunet     Boolean?
+  password_hash  String?
+  password_salt  String?
+}
+
+model Group {
+  id           Int      @id @default(autoincrement())
+  faculty_code String?
+  faculty_name String?
+  diploma_id   Int?
+  order_start  Int?
+  order_end    Int?
+  diploma      Diploma? @relation(fields: [diploma_id], references: [id])
+  attends      Attend[]
+}
+
+model Round {
+  id         Int      @id @default(autoincrement())
+  round_code Int?
+  time       DateTime?
+  round_type RoundType
+  schedules  Schedule[]
+}
+
+model Schedule {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  round_id  Int
+  round     Round    @relation(fields: [round_id], references: [id])
+  attends   Attend[]
+}
+
+model Attend {
+  id          Int      @id @default(autoincrement())
+  group_id    Int
+  schedule_id Int
+  is_first    Boolean?
+  is_last     Boolean?
+  group       Group    @relation(fields: [group_id], references: [id])
+  schedule    Schedule @relation(fields: [schedule_id], references: [id])
+}
+
+enum RoundType {
+  rehearsal1
+  rehearsal2
+  ceremony
+  special
+}

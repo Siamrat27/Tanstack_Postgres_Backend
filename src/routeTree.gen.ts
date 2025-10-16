@@ -13,13 +13,24 @@ import { Route as TodosRouteImport } from './routes/todos'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as DemoPrismaRouteImport } from './routes/demo/prisma'
+import { Route as ApiUsersRouteImport } from './routes/api/users'
 import { Route as ApiTodosRouteImport } from './routes/api/todos'
+import { Route as ApiSchedulesRouteImport } from './routes/api/schedules'
+import { Route as ApiRoundsRouteImport } from './routes/api/rounds'
+import { Route as ApiGroupsRouteImport } from './routes/api/groups'
 import { Route as ApiGraduatesRouteImport } from './routes/api/graduates'
+import { Route as ApiDiplomasRouteImport } from './routes/api/diplomas'
+import { Route as ApiAttendsRouteImport } from './routes/api/attends'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
 import { Route as DemoApiTqTodosRouteImport } from './routes/demo/api.tq-todos'
 import { Route as DemoApiNamesRouteImport } from './routes/demo/api.names'
+import { Route as ApiUsersIdRouteImport } from './routes/api/users.$id'
+import { Route as ApiSchedulesIdRouteImport } from './routes/api/schedules.$id'
+import { Route as ApiRoundsIdRouteImport } from './routes/api/rounds.$id'
 import { Route as ApiGraduatesStudent_idRouteImport } from './routes/api/graduates.$student_id'
+import { Route as ApiDiplomasIdRouteImport } from './routes/api/diplomas.$id'
+import { Route as ApiAttendsIdRouteImport } from './routes/api/attends.$id'
 import { Route as DemoStartSsrIndexRouteImport } from './routes/demo/start.ssr.index'
 import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr.spa-mode'
 import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
@@ -45,14 +56,44 @@ const DemoPrismaRoute = DemoPrismaRouteImport.update({
   path: '/demo/prisma',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiUsersRoute = ApiUsersRouteImport.update({
+  id: '/api/users',
+  path: '/api/users',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTodosRoute = ApiTodosRouteImport.update({
   id: '/api/todos',
   path: '/api/todos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSchedulesRoute = ApiSchedulesRouteImport.update({
+  id: '/api/schedules',
+  path: '/api/schedules',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRoundsRoute = ApiRoundsRouteImport.update({
+  id: '/api/rounds',
+  path: '/api/rounds',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGroupsRoute = ApiGroupsRouteImport.update({
+  id: '/api/groups',
+  path: '/api/groups',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGraduatesRoute = ApiGraduatesRouteImport.update({
   id: '/api/graduates',
   path: '/api/graduates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDiplomasRoute = ApiDiplomasRouteImport.update({
+  id: '/api/diplomas',
+  path: '/api/diplomas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAttendsRoute = ApiAttendsRouteImport.update({
+  id: '/api/attends',
+  path: '/api/attends',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoStartServerFuncsRoute = DemoStartServerFuncsRouteImport.update({
@@ -75,10 +116,35 @@ const DemoApiNamesRoute = DemoApiNamesRouteImport.update({
   path: '/demo/api/names',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiUsersIdRoute = ApiUsersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiUsersRoute,
+} as any)
+const ApiSchedulesIdRoute = ApiSchedulesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiSchedulesRoute,
+} as any)
+const ApiRoundsIdRoute = ApiRoundsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiRoundsRoute,
+} as any)
 const ApiGraduatesStudent_idRoute = ApiGraduatesStudent_idRouteImport.update({
   id: '/$student_id',
   path: '/$student_id',
   getParentRoute: () => ApiGraduatesRoute,
+} as any)
+const ApiDiplomasIdRoute = ApiDiplomasIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiDiplomasRoute,
+} as any)
+const ApiAttendsIdRoute = ApiAttendsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiAttendsRoute,
 } as any)
 const DemoStartSsrIndexRoute = DemoStartSsrIndexRouteImport.update({
   id: '/demo/start/ssr/',
@@ -104,11 +170,22 @@ const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/todos': typeof TodosRoute
+  '/api/attends': typeof ApiAttendsRouteWithChildren
+  '/api/diplomas': typeof ApiDiplomasRouteWithChildren
   '/api/graduates': typeof ApiGraduatesRouteWithChildren
+  '/api/groups': typeof ApiGroupsRoute
+  '/api/rounds': typeof ApiRoundsRouteWithChildren
+  '/api/schedules': typeof ApiSchedulesRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
+  '/api/users': typeof ApiUsersRouteWithChildren
   '/demo/prisma': typeof DemoPrismaRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/api/attends/$id': typeof ApiAttendsIdRoute
+  '/api/diplomas/$id': typeof ApiDiplomasIdRoute
   '/api/graduates/$student_id': typeof ApiGraduatesStudent_idRoute
+  '/api/rounds/$id': typeof ApiRoundsIdRoute
+  '/api/schedules/$id': typeof ApiSchedulesIdRoute
+  '/api/users/$id': typeof ApiUsersIdRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -121,11 +198,22 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/todos': typeof TodosRoute
+  '/api/attends': typeof ApiAttendsRouteWithChildren
+  '/api/diplomas': typeof ApiDiplomasRouteWithChildren
   '/api/graduates': typeof ApiGraduatesRouteWithChildren
+  '/api/groups': typeof ApiGroupsRoute
+  '/api/rounds': typeof ApiRoundsRouteWithChildren
+  '/api/schedules': typeof ApiSchedulesRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
+  '/api/users': typeof ApiUsersRouteWithChildren
   '/demo/prisma': typeof DemoPrismaRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/api/attends/$id': typeof ApiAttendsIdRoute
+  '/api/diplomas/$id': typeof ApiDiplomasIdRoute
   '/api/graduates/$student_id': typeof ApiGraduatesStudent_idRoute
+  '/api/rounds/$id': typeof ApiRoundsIdRoute
+  '/api/schedules/$id': typeof ApiSchedulesIdRoute
+  '/api/users/$id': typeof ApiUsersIdRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -139,11 +227,22 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/todos': typeof TodosRoute
+  '/api/attends': typeof ApiAttendsRouteWithChildren
+  '/api/diplomas': typeof ApiDiplomasRouteWithChildren
   '/api/graduates': typeof ApiGraduatesRouteWithChildren
+  '/api/groups': typeof ApiGroupsRoute
+  '/api/rounds': typeof ApiRoundsRouteWithChildren
+  '/api/schedules': typeof ApiSchedulesRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
+  '/api/users': typeof ApiUsersRouteWithChildren
   '/demo/prisma': typeof DemoPrismaRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
+  '/api/attends/$id': typeof ApiAttendsIdRoute
+  '/api/diplomas/$id': typeof ApiDiplomasIdRoute
   '/api/graduates/$student_id': typeof ApiGraduatesStudent_idRoute
+  '/api/rounds/$id': typeof ApiRoundsIdRoute
+  '/api/schedules/$id': typeof ApiSchedulesIdRoute
+  '/api/users/$id': typeof ApiUsersIdRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/api/tq-todos': typeof DemoApiTqTodosRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -158,11 +257,22 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/todos'
+    | '/api/attends'
+    | '/api/diplomas'
     | '/api/graduates'
+    | '/api/groups'
+    | '/api/rounds'
+    | '/api/schedules'
     | '/api/todos'
+    | '/api/users'
     | '/demo/prisma'
     | '/demo/tanstack-query'
+    | '/api/attends/$id'
+    | '/api/diplomas/$id'
     | '/api/graduates/$student_id'
+    | '/api/rounds/$id'
+    | '/api/schedules/$id'
+    | '/api/users/$id'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
@@ -175,11 +285,22 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/todos'
+    | '/api/attends'
+    | '/api/diplomas'
     | '/api/graduates'
+    | '/api/groups'
+    | '/api/rounds'
+    | '/api/schedules'
     | '/api/todos'
+    | '/api/users'
     | '/demo/prisma'
     | '/demo/tanstack-query'
+    | '/api/attends/$id'
+    | '/api/diplomas/$id'
     | '/api/graduates/$student_id'
+    | '/api/rounds/$id'
+    | '/api/schedules/$id'
+    | '/api/users/$id'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
@@ -192,11 +313,22 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/todos'
+    | '/api/attends'
+    | '/api/diplomas'
     | '/api/graduates'
+    | '/api/groups'
+    | '/api/rounds'
+    | '/api/schedules'
     | '/api/todos'
+    | '/api/users'
     | '/demo/prisma'
     | '/demo/tanstack-query'
+    | '/api/attends/$id'
+    | '/api/diplomas/$id'
     | '/api/graduates/$student_id'
+    | '/api/rounds/$id'
+    | '/api/schedules/$id'
+    | '/api/users/$id'
     | '/demo/api/names'
     | '/demo/api/tq-todos'
     | '/demo/start/api-request'
@@ -210,8 +342,14 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   TodosRoute: typeof TodosRoute
+  ApiAttendsRoute: typeof ApiAttendsRouteWithChildren
+  ApiDiplomasRoute: typeof ApiDiplomasRouteWithChildren
   ApiGraduatesRoute: typeof ApiGraduatesRouteWithChildren
+  ApiGroupsRoute: typeof ApiGroupsRoute
+  ApiRoundsRoute: typeof ApiRoundsRouteWithChildren
+  ApiSchedulesRoute: typeof ApiSchedulesRouteWithChildren
   ApiTodosRoute: typeof ApiTodosRoute
+  ApiUsersRoute: typeof ApiUsersRouteWithChildren
   DemoPrismaRoute: typeof DemoPrismaRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
@@ -254,6 +392,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoPrismaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/users': {
+      id: '/api/users'
+      path: '/api/users'
+      fullPath: '/api/users'
+      preLoaderRoute: typeof ApiUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/todos': {
       id: '/api/todos'
       path: '/api/todos'
@@ -261,11 +406,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTodosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/schedules': {
+      id: '/api/schedules'
+      path: '/api/schedules'
+      fullPath: '/api/schedules'
+      preLoaderRoute: typeof ApiSchedulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rounds': {
+      id: '/api/rounds'
+      path: '/api/rounds'
+      fullPath: '/api/rounds'
+      preLoaderRoute: typeof ApiRoundsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/groups': {
+      id: '/api/groups'
+      path: '/api/groups'
+      fullPath: '/api/groups'
+      preLoaderRoute: typeof ApiGroupsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/graduates': {
       id: '/api/graduates'
       path: '/api/graduates'
       fullPath: '/api/graduates'
       preLoaderRoute: typeof ApiGraduatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/diplomas': {
+      id: '/api/diplomas'
+      path: '/api/diplomas'
+      fullPath: '/api/diplomas'
+      preLoaderRoute: typeof ApiDiplomasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/attends': {
+      id: '/api/attends'
+      path: '/api/attends'
+      fullPath: '/api/attends'
+      preLoaderRoute: typeof ApiAttendsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo/start/server-funcs': {
@@ -296,12 +476,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoApiNamesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/users/$id': {
+      id: '/api/users/$id'
+      path: '/$id'
+      fullPath: '/api/users/$id'
+      preLoaderRoute: typeof ApiUsersIdRouteImport
+      parentRoute: typeof ApiUsersRoute
+    }
+    '/api/schedules/$id': {
+      id: '/api/schedules/$id'
+      path: '/$id'
+      fullPath: '/api/schedules/$id'
+      preLoaderRoute: typeof ApiSchedulesIdRouteImport
+      parentRoute: typeof ApiSchedulesRoute
+    }
+    '/api/rounds/$id': {
+      id: '/api/rounds/$id'
+      path: '/$id'
+      fullPath: '/api/rounds/$id'
+      preLoaderRoute: typeof ApiRoundsIdRouteImport
+      parentRoute: typeof ApiRoundsRoute
+    }
     '/api/graduates/$student_id': {
       id: '/api/graduates/$student_id'
       path: '/$student_id'
       fullPath: '/api/graduates/$student_id'
       preLoaderRoute: typeof ApiGraduatesStudent_idRouteImport
       parentRoute: typeof ApiGraduatesRoute
+    }
+    '/api/diplomas/$id': {
+      id: '/api/diplomas/$id'
+      path: '/$id'
+      fullPath: '/api/diplomas/$id'
+      preLoaderRoute: typeof ApiDiplomasIdRouteImport
+      parentRoute: typeof ApiDiplomasRoute
+    }
+    '/api/attends/$id': {
+      id: '/api/attends/$id'
+      path: '/$id'
+      fullPath: '/api/attends/$id'
+      preLoaderRoute: typeof ApiAttendsIdRouteImport
+      parentRoute: typeof ApiAttendsRoute
     }
     '/demo/start/ssr/': {
       id: '/demo/start/ssr/'
@@ -334,6 +549,30 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ApiAttendsRouteChildren {
+  ApiAttendsIdRoute: typeof ApiAttendsIdRoute
+}
+
+const ApiAttendsRouteChildren: ApiAttendsRouteChildren = {
+  ApiAttendsIdRoute: ApiAttendsIdRoute,
+}
+
+const ApiAttendsRouteWithChildren = ApiAttendsRoute._addFileChildren(
+  ApiAttendsRouteChildren,
+)
+
+interface ApiDiplomasRouteChildren {
+  ApiDiplomasIdRoute: typeof ApiDiplomasIdRoute
+}
+
+const ApiDiplomasRouteChildren: ApiDiplomasRouteChildren = {
+  ApiDiplomasIdRoute: ApiDiplomasIdRoute,
+}
+
+const ApiDiplomasRouteWithChildren = ApiDiplomasRoute._addFileChildren(
+  ApiDiplomasRouteChildren,
+)
+
 interface ApiGraduatesRouteChildren {
   ApiGraduatesStudent_idRoute: typeof ApiGraduatesStudent_idRoute
 }
@@ -346,11 +585,53 @@ const ApiGraduatesRouteWithChildren = ApiGraduatesRoute._addFileChildren(
   ApiGraduatesRouteChildren,
 )
 
+interface ApiRoundsRouteChildren {
+  ApiRoundsIdRoute: typeof ApiRoundsIdRoute
+}
+
+const ApiRoundsRouteChildren: ApiRoundsRouteChildren = {
+  ApiRoundsIdRoute: ApiRoundsIdRoute,
+}
+
+const ApiRoundsRouteWithChildren = ApiRoundsRoute._addFileChildren(
+  ApiRoundsRouteChildren,
+)
+
+interface ApiSchedulesRouteChildren {
+  ApiSchedulesIdRoute: typeof ApiSchedulesIdRoute
+}
+
+const ApiSchedulesRouteChildren: ApiSchedulesRouteChildren = {
+  ApiSchedulesIdRoute: ApiSchedulesIdRoute,
+}
+
+const ApiSchedulesRouteWithChildren = ApiSchedulesRoute._addFileChildren(
+  ApiSchedulesRouteChildren,
+)
+
+interface ApiUsersRouteChildren {
+  ApiUsersIdRoute: typeof ApiUsersIdRoute
+}
+
+const ApiUsersRouteChildren: ApiUsersRouteChildren = {
+  ApiUsersIdRoute: ApiUsersIdRoute,
+}
+
+const ApiUsersRouteWithChildren = ApiUsersRoute._addFileChildren(
+  ApiUsersRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   TodosRoute: TodosRoute,
+  ApiAttendsRoute: ApiAttendsRouteWithChildren,
+  ApiDiplomasRoute: ApiDiplomasRouteWithChildren,
   ApiGraduatesRoute: ApiGraduatesRouteWithChildren,
+  ApiGroupsRoute: ApiGroupsRoute,
+  ApiRoundsRoute: ApiRoundsRouteWithChildren,
+  ApiSchedulesRoute: ApiSchedulesRouteWithChildren,
   ApiTodosRoute: ApiTodosRoute,
+  ApiUsersRoute: ApiUsersRouteWithChildren,
   DemoPrismaRoute: DemoPrismaRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,
