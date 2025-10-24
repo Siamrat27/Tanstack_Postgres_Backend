@@ -1,21 +1,83 @@
+// /routes/api/diplomas.ts
 import { createFileRoute } from "@tanstack/react-router";
 import { prisma } from "@/db";
+import { Prisma } from "@prisma/client";
+import jwt from "jsonwebtoken";
+
+// (ฟังก์ชัน getCurrentUser ที่เราทำไว้ก่อนหน้า - เหมือนเดิม)
+async function getCurrentUser(request: Request) {
+  try {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return null;
+    }
+    const token = authHeader.split(" ")[1];
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error("JWT_SECRET is not set");
+
+    const decoded = jwt.verify(token, secret);
+    
+    // ดึงข้อมูล User สดจาก DB
+    const payload = decoded as { id: number }; // <-- แก้ไข payload ตาม login.ts ของคุณ
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id }, // <-- ใช้ id (ตาม login.ts ของคุณ)
+      select: {
+        id: true,
+        role: true,
+        faculty_code: true,
+      },
+    });
+
+    return user;
+  } catch (error) {
+    console.error("Auth Error:", error);
+    return null;
+  }
+}
 
 export const Route = createFileRoute("/api/diplomas")({
   server: {
     handlers: {
-      GET: async () => {
-        const data = await prisma.diploma.findMany({ orderBy: { id: "asc" } });
-        return new Response(JSON.stringify({ success: true, data }), {
-          headers: { "Content-Type": "application/json" },
-        });
-      },
-      POST: async ({ request }) => {
-        const body = await request.json();
-        const created = await prisma.diploma.create({ data: body });
-        return new Response(JSON.stringify({ success: true, created }), {
-          headers: { "Content-Type": "application/json" },
-        });
+      GET: async ({ request }) => {
+        try {
+          const currentUser = await getCurrentUser(request);
+
+          if (!currentUser) {
+            return new Response(
+              JSON.stringify({ success: false, message: "Unauthorized" }),
+              { status: 401, headers: { "Content-Type": "application/json" } }
+            );
+          }
+
+          let whereClause: Prisma.DiplomaWhereInput = {};
+
+          // vvvv (จุดที่แก้ไข) vvvv
+          // ถ้า Role ไม่ใช่ 'admin' (และไม่ใช่ 'Supervisor')
+          if (currentUser.role !== "admin" && currentUser.role !== "Supervisor") {
+          // ^^^^ ---------------- ^^^^
+            whereClause = {
+              faculty_code: currentUser.faculty_code,
+            };
+          }
+
+          const diplomas = await prisma.diploma.findMany({
+            where: whereClause,
+            orderBy: {
+              id: "asc",
+            },
+          });
+
+          return new Response(JSON.stringify({ success: true, data: diplomas }), {
+            headers: { "Content-Type": "application/json" },
+          });
+
+        } catch (error) {
+          console.error("GET Diplomas Error:", error);
+          return new Response(
+            JSON.stringify({ success: false, message: "Internal server error" }),
+            { status: 500, headers: { "Content-Type": "application/json" } }
+          );
+        }
       },
     },
   },

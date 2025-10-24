@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/users")({
         const body = await request.json();
         
         // --- 2. ดึงข้อมูลที่จำเป็นออกจาก body ---
-        const { username, password, first_name, last_name, role } = body;
+        const { username, password, first_name, last_name, role, faculty_code, from_cunet, can_manage_undergrad_level, can_manage_graduate_level} = body;
 
         // --- 3. ตรวจสอบข้อมูลเบื้องต้น ---
         if (!username) {
@@ -72,6 +72,10 @@ export const Route = createFileRoute("/api/users")({
             first_name: first_name,
             last_name: last_name,
             role: role,
+            faculty_code: faculty_code,
+            from_cunet: from_cunet,
+            can_manage_undergrad_level: can_manage_undergrad_level,
+            can_manage_graduate_level: can_manage_graduate_level,
             // ... (ใส่ field อื่นๆ ที่รับมาจาก body ตาม schema)
           },
           // (เลือกเฉพาะ field ที่จะให้ส่งค่ากลับมา)
@@ -81,6 +85,10 @@ export const Route = createFileRoute("/api/users")({
             first_name: true,
             last_name: true,
             role: true,
+            faculty_code: true,
+            from_cunet: true,
+            can_manage_undergrad_level: true,
+            can_manage_graduate_level: true,
           }
         });
 
