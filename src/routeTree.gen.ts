@@ -17,6 +17,7 @@ import { Route as ApiUsersRouteImport } from './routes/api/users'
 import { Route as ApiTodosRouteImport } from './routes/api/todos'
 import { Route as ApiSchedulesRouteImport } from './routes/api/schedules'
 import { Route as ApiRoundsRouteImport } from './routes/api/rounds'
+import { Route as ApiLoginRouteImport } from './routes/api/login'
 import { Route as ApiGroupsRouteImport } from './routes/api/groups'
 import { Route as ApiGraduatesRouteImport } from './routes/api/graduates'
 import { Route as ApiDiplomasRouteImport } from './routes/api/diplomas'
@@ -74,6 +75,11 @@ const ApiSchedulesRoute = ApiSchedulesRouteImport.update({
 const ApiRoundsRoute = ApiRoundsRouteImport.update({
   id: '/api/rounds',
   path: '/api/rounds',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLoginRoute = ApiLoginRouteImport.update({
+  id: '/api/login',
+  path: '/api/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGroupsRoute = ApiGroupsRouteImport.update({
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/api/diplomas': typeof ApiDiplomasRouteWithChildren
   '/api/graduates': typeof ApiGraduatesRouteWithChildren
   '/api/groups': typeof ApiGroupsRoute
+  '/api/login': typeof ApiLoginRoute
   '/api/rounds': typeof ApiRoundsRouteWithChildren
   '/api/schedules': typeof ApiSchedulesRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
@@ -202,6 +209,7 @@ export interface FileRoutesByTo {
   '/api/diplomas': typeof ApiDiplomasRouteWithChildren
   '/api/graduates': typeof ApiGraduatesRouteWithChildren
   '/api/groups': typeof ApiGroupsRoute
+  '/api/login': typeof ApiLoginRoute
   '/api/rounds': typeof ApiRoundsRouteWithChildren
   '/api/schedules': typeof ApiSchedulesRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
@@ -231,6 +239,7 @@ export interface FileRoutesById {
   '/api/diplomas': typeof ApiDiplomasRouteWithChildren
   '/api/graduates': typeof ApiGraduatesRouteWithChildren
   '/api/groups': typeof ApiGroupsRoute
+  '/api/login': typeof ApiLoginRoute
   '/api/rounds': typeof ApiRoundsRouteWithChildren
   '/api/schedules': typeof ApiSchedulesRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
@@ -261,6 +270,7 @@ export interface FileRouteTypes {
     | '/api/diplomas'
     | '/api/graduates'
     | '/api/groups'
+    | '/api/login'
     | '/api/rounds'
     | '/api/schedules'
     | '/api/todos'
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/api/diplomas'
     | '/api/graduates'
     | '/api/groups'
+    | '/api/login'
     | '/api/rounds'
     | '/api/schedules'
     | '/api/todos'
@@ -317,6 +328,7 @@ export interface FileRouteTypes {
     | '/api/diplomas'
     | '/api/graduates'
     | '/api/groups'
+    | '/api/login'
     | '/api/rounds'
     | '/api/schedules'
     | '/api/todos'
@@ -346,6 +358,7 @@ export interface RootRouteChildren {
   ApiDiplomasRoute: typeof ApiDiplomasRouteWithChildren
   ApiGraduatesRoute: typeof ApiGraduatesRouteWithChildren
   ApiGroupsRoute: typeof ApiGroupsRoute
+  ApiLoginRoute: typeof ApiLoginRoute
   ApiRoundsRoute: typeof ApiRoundsRouteWithChildren
   ApiSchedulesRoute: typeof ApiSchedulesRouteWithChildren
   ApiTodosRoute: typeof ApiTodosRoute
@@ -418,6 +431,13 @@ declare module '@tanstack/react-router' {
       path: '/api/rounds'
       fullPath: '/api/rounds'
       preLoaderRoute: typeof ApiRoundsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/login': {
+      id: '/api/login'
+      path: '/api/login'
+      fullPath: '/api/login'
+      preLoaderRoute: typeof ApiLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/groups': {
@@ -628,6 +648,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDiplomasRoute: ApiDiplomasRouteWithChildren,
   ApiGraduatesRoute: ApiGraduatesRouteWithChildren,
   ApiGroupsRoute: ApiGroupsRoute,
+  ApiLoginRoute: ApiLoginRoute,
   ApiRoundsRoute: ApiRoundsRouteWithChildren,
   ApiSchedulesRoute: ApiSchedulesRouteWithChildren,
   ApiTodosRoute: ApiTodosRoute,
