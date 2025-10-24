@@ -36,23 +36,28 @@ git clone https://github.com/<your-username>/<your-repo>.git
 cd <your-repo>
 ```
 
-```bash
 2️⃣ Install Dependencies
-bash
+
+```bash
+
 Copy code
 npm install
+```
+
 3️⃣ Configure Environment Variables
 Create a .env.local file in the root directory:
 
-bash
 Copy code
+
+```bash
 DATABASE_URL="postgresql://{username}:{password}@localhost:5432/{dbname}?schema={schemaname}"
 🧠 Change the username, password, database, or schema name as needed.
 Example: if your DB name is mydb, use postgresql://postgres:123456@localhost:5432/mydb?schema=public.
 ```
 
-```bash
 4️⃣ Prisma Setup
+
+```bash
 bash
 Copy code
 # Generate the Prisma client
@@ -65,8 +70,9 @@ npm run db:push
 npm run db:studio
 ```
 
-```bash
 5️⃣ Start the Development Server
+
+```bash
 bash
 Copy code
 npm run dev
