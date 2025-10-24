@@ -8,8 +8,8 @@ generator client {
 }
 
 model Graduate {
-  id                 Int      @id @default(autoincrement())
-  student_id         String?  @unique
+  id                 Int       @id @default(autoincrement())
+  student_id         String?   @unique
   prefix_th          String?
   first_name_th      String?
   last_name_th       String?
@@ -18,65 +18,86 @@ model Graduate {
   last_name_en       String?
   barcode            String?
   gender             String?
-  citizen_id         String?  @unique
-  passport_no        String?  @unique
-  ccr_barcode        String?  @unique
-  do_survey          Boolean? @default(false)
+  citizen_id         String?   @unique
+  passport_no        String?   @unique
+  ccr_barcode        String?   @unique
+  do_survey          Boolean?  @default(false)
   karaoke_first_name String?
   karaoke_last_name  String?
+
   diplomas           Diploma[]
+
+  @@index([student_id])
 }
 
 model Diploma {
-  id               Int      @id @default(autoincrement())
-  degree_th        String?
-  degree_en        String?
-  major_th         String?
-  major_en         String?
-  faculty_code     String?
-  honor            String?
-  honor_code       Int?
-  degree_code      Int?
-  student_id       String?
-  graduate_id      Int?
-  barcode          String?
-  extra_attend     Boolean?
-  eligible_receive Boolean?
-  order_no         Int?
-  order_display    String?
+  id                Int       @id @default(autoincrement())
+  degree_th         String?
+  degree_en         String?
+  major_th          String?
+  major_en          String?
+  faculty_code      String?  
+  honor             String?
+  honor_code        Int?
+  degree_code       Int?
+  student_id        String?
+  graduate_id       Int?
+  barcode           String?
+  extra_attend      Boolean?
+  eligible_receive  Boolean?
+  order_no          Int?
+  order_display     String?
   rehearsal_seat_no String?
-  graduate         Graduate? @relation(fields: [graduate_id], references: [id])
-  groups           Group[]
+
+  graduate          Graduate? @relation(fields: [graduate_id], references: [id])
+  faculty           Faculty?  @relation(fields: [faculty_code], references: [faculty_code], onDelete: SetNull, onUpdate: Cascade)
+  groups            Group[]
+
+  @@index([graduate_id])
+  @@index([student_id])
+  @@index([faculty_code])
 }
 
 model User {
-  id             Int     @id @default(autoincrement())
-  username       String  @unique
-  name           String?
-  role           String?
-  faculty_code   String?
-  from_cunet     Boolean?
-  password_hash  String?
-  password_salt  String?
+  id                           Int      @id @default(autoincrement())
+  username                     String   @unique
+  first_name                   String?
+  last_name                    String?
+  role                         String?
+  faculty_code                 String?  // FK -> Faculty.faculty_code
+  from_cunet                   Boolean? @default(false)
+  can_manage_undergrad_level   Boolean? @default(false)
+  can_manage_graduate_level    Boolean? @default(false)
+  password_hash                String?
+  password_salt                String?
+
+  faculty                      Faculty? @relation(fields: [faculty_code], references: [faculty_code], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([faculty_code])
 }
 
 model Group {
   id           Int      @id @default(autoincrement())
-  faculty_code String?
-  faculty_name String?
-  diploma_id   Int?
+  faculty_code String?  
+  diploma_id   Int?    
   order_start  Int?
   order_end    Int?
+  faculty      Faculty? @relation(fields: [faculty_code], references: [faculty_code], onDelete: SetNull, onUpdate: Cascade)
   diploma      Diploma? @relation(fields: [diploma_id], references: [id])
   attends      Attend[]
+
+  @@index([faculty_code])
+  @@index([diploma_id])
 }
 
 model Round {
-  id         Int      @id @default(autoincrement())
+  id         Int        @id @default(autoincrement())
   round_code Int?
   time       DateTime?
   round_type RoundType
   schedules  Schedule[]
+
+  @@index([round_code])
 }
 
 model Schedule {
@@ -85,6 +106,8 @@ model Schedule {
   round_id  Int
   round     Round    @relation(fields: [round_id], references: [id])
   attends   Attend[]
+
+  @@index([round_id, date])
 }
 
 model Attend {
@@ -93,8 +116,21 @@ model Attend {
   schedule_id Int
   is_first    Boolean?
   is_last     Boolean?
+
   group       Group    @relation(fields: [group_id], references: [id])
   schedule    Schedule @relation(fields: [schedule_id], references: [id])
+
+  @@unique([group_id, schedule_id]) // ไม่ให้ซ้ำในรอบเดียวกัน
+}
+
+model Faculty {
+  id           Int      @id @default(autoincrement())
+  faculty_code String   @unique
+  faculty_name String?
+
+  users    User[]
+  groups   Group[]
+  diplomas Diploma[]
 }
 
 enum RoundType {
