@@ -8,8 +8,6 @@ cd <your-repo>
 2️⃣ Install Dependencies
 
 ```bash
-
-Copy code
 npm install
 ```
 
@@ -21,7 +19,6 @@ Copy from .env.example
 4️⃣ Prisma Setup
 
 ```bash
-bash
 # Generate the Prisma client
 npm run db:generate
 
@@ -35,11 +32,10 @@ npm run db:studio
 5️⃣ Start the Development Server
 
 ```bash
-bash
 npm run dev
 ```
 
----------------------------------------------------------
+---
 
 🧪 Reset Postgres schema
 
@@ -49,18 +45,20 @@ npx prisma migrate dev --name init
 npx prisma generate
 npx prisma studio
 ```
----------------------------------------------------------
+
+---
 
 🧪 Mock Data
+
 ```bash
 -- 1. เริ่ม Transaction เพื่อให้รันทั้งหมดหรือล้มเหลวทั้งหมด
 BEGIN;
 
 -- 2. (ข้อควรระวัง!) ล้างข้อมูลเก่าในตารางทั้งหมด และรีเซ็ต ID ที่นับอัตโนมัติ
 -- เพื่อให้ ID เริ่มต้นที่ 1 และป้องกัน Foreign Key conflicts
-TRUNCATE 
-  "Faculty", "Round", "User", "Graduate", "Diploma", 
-  "Schedule", "Group", "Attend" 
+TRUNCATE
+  "Faculty", "Round", "User", "Graduate", "Diploma",
+  "Schedule", "Group", "Attend"
 RESTART IDENTITY CASCADE;
 
 -- 3. สร้างข้อมูล "ราก" (Root Data) ที่ไม่มี Dependencies
@@ -88,14 +86,14 @@ INSERT INTO "User" ("username", "first_name", "last_name", "role", "faculty_code
 -- 5. สร้างข้อมูลหลัก: บัณฑิต (Graduate) 30 คน
 -- เราจะใช้ generate_series เพื่อสร้างข้อมูล 30 แถว
 INSERT INTO "Graduate" (
-  "student_id", "prefix_th", "first_name_th", "last_name_th", 
-  "prefix_en", "first_name_en", "last_name_en", 
+  "student_id", "prefix_th", "first_name_th", "last_name_th",
+  "prefix_en", "first_name_en", "last_name_en",
   "citizen_id", "ccr_barcode"
 )
 SELECT
   '6601' || lpad(i::text, 4, '0'), -- 66010001, 66010002, ...
-  'นาย', 
-  'บัณฑิตที่', 
+  'นาย',
+  'บัณฑิตที่',
   i::text,
   'Mr.',
   'Graduate',
@@ -107,8 +105,8 @@ FROM generate_series(1, 30) AS i;
 -- 6. สร้างข้อมูลหลัก: ปริญญา (Diploma) 30 ใบ
 -- (เชื่อมโยงกับ Graduate ทั้ง 30 คน)
 INSERT INTO "Diploma" (
-  "degree_th", "degree_en", "major_th", "major_en", 
-  "faculty_code", "honor", "order_no", "order_display", 
+  "degree_th", "degree_en", "major_th", "major_en",
+  "faculty_code", "honor", "order_no", "order_display",
   "graduate_id", "student_id"
 )
 SELECT
