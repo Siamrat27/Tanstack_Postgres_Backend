@@ -1,84 +1,16 @@
-// users.ts
+// /routes/api/users.ts
 import { createFileRoute } from "@tanstack/react-router";
 import { prisma } from "@/db";
-import bcrypt from "bcrypt"; // <-- 1. Import bcrypt
+import bcrypt from "bcrypt";
+import { Prisma } from "@prisma/client"; // (Import เพิ่ม)
 
 export const Route = createFileRoute("/api/users")({
   server: {
     handlers: {
       GET: async () => {
-        // (GET handler เหมือนเดิม)
-        const data = await prisma.user.findMany({ orderBy: { id: "asc" } });
-        return new Response(JSON.stringify({ success: true, data }), {
-          headers: { "Content-Type": "application/json" },
-        });
-      },
-
-      POST: async ({ request }) => {
-        const body = await request.json();
-        
-        // --- 2. ดึงข้อมูลที่จำเป็นออกจาก body ---
-        const { username, password, first_name, last_name, role, faculty_code, from_cunet, can_manage_undergrad_level, can_manage_graduate_level} = body;
-
-        // --- 3. ตรวจสอบข้อมูลเบื้องต้น ---
-        if (!username) {
-          return new Response(JSON.stringify({ 
-              success: false, 
-              error: "Username is required" 
-          }), {
-              status: 400, // 400 Bad Request
-              headers: { "Content-Type": "application/json" },
-          });
-        }
-        
-        if (!password) { // <-- ตรวจสอบ password ด้วย
-           return new Response(JSON.stringify({ 
-              success: false, 
-              error: "Password is required" 
-          }), {
-              status: 400,
-              headers: { "Content-Type": "application/json" },
-          });
-        }
-
-        // --- 4. ตรวจสอบ Username ซ้ำ ---
-        const existingUser = await prisma.user.findUnique({ // (ใช้ findUnique ดีกว่าถ้า username เป็น @unique)
-          where: {
-            username: username,
-          },
-        });
-
-        if (existingUser) {
-          return new Response(JSON.stringify({
-            success: false,
-            error: "This username is already taken",
-          }), {
-            status: 409, // 409 Conflict
-            headers: { "Content-Type": "application/json" },
-          });
-        }
-
-        // --- 5. เข้ารหัสรหัสผ่าน (Hashing) ---
-        // (ใช้ 10-12 "rounds" เป็นมาตรฐาน)
-        const password_hash = await bcrypt.hash(password, 10);
-
-        // --- 6. สร้าง User ใหม่ (โดยระบุ field ชัดเจน) ---
-        // (ห้ามใช้ data: body โดยตรง เพราะจะเก็บ password ตัวจริงลงไป)
-        const created = await prisma.user.create({
-          data: {
-            username: username,
-            password_hash: password_hash, // <-- เก็บ hash ที่เข้ารหัสแล้ว
-            password_salt: null,          // <-- ไม่ต้องใช้ เพราะ salt อยู่ใน hash แล้ว
-            first_name: first_name,
-            last_name: last_name,
-            role: role,
-            faculty_code: faculty_code,
-            from_cunet: from_cunet,
-            can_manage_undergrad_level: can_manage_undergrad_level,
-            can_manage_graduate_level: can_manage_graduate_level,
-            // ... (ใส่ field อื่นๆ ที่รับมาจาก body ตาม schema)
-          },
-          // (เลือกเฉพาะ field ที่จะให้ส่งค่ากลับมา)
+        // (GET handler - แนะนำให้ select field ที่ปลอดภัย)
+        const data = await prisma.user.findMany({
+          orderBy: { id: "asc" },
           select: {
             id: true,
             username: true,
@@ -86,17 +18,105 @@ export const Route = createFileRoute("/api/users")({
             last_name: true,
             role: true,
             faculty_code: true,
-            from_cunet: true,
             can_manage_undergrad_level: true,
             can_manage_graduate_level: true,
-          }
+          },
         });
-
-        // --- 7. ส่ง Response (ห้ามส่ง password_hash กลับไป) ---
-        return new Response(JSON.stringify({ success: true, created: created }), {
-          status: 201, // 201 Created
+        return new Response(JSON.stringify({ success: true, data }), {
           headers: { "Content-Type": "application/json" },
         });
+      },
+
+      POST: async ({ request }) => {
+        try {
+          const body = await request.json();
+
+          const {
+            username,
+            password,
+            first_name,
+            last_name,
+            role,
+            faculty_code,
+            from_cunet,
+            can_manage_undergrad_level,
+            can_manage_graduate_level,
+          } = body;
+
+          // (การตรวจสอบ Username/Password ที่คุณทำมา... ถูกต้องแล้ว)
+          if (!username || !password) {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: "Username and password are required",
+              }),
+              { status: 400, headers: { "Content-Type": "application/json" } }
+            );
+          }
+
+          const password_hash = await bcrypt.hash(password, 10);
+
+          // 6. สร้าง User ใหม่ (ด้วย Logic การบังคับ Role)
+          const created = await prisma.user.create({
+            data: {
+              username: username,
+              password_hash: password_hash,
+              password_salt: null, // (ถ้า salt อยู่ใน hash แล้ว)
+              first_name: first_name,
+              last_name: last_name,
+              role: role,
+              
+              // (Logic ที่บังคับสิทธิ์ของ Admin/Supervisor)
+              faculty_code: (role === "admin" || role === "Supervisor") 
+                              ? null 
+                              : faculty_code,
+
+              can_manage_undergrad_level: (role === "admin" || role === "Supervisor")
+                                ? false // Admin/Supervisor ไม่ใช้สิทธิ์นี้ (เช็ค role ตรงๆ)
+                                : can_manage_undergrad_level,
+                                
+              can_manage_graduate_level: (role === "admin" || role === "Supervisor")
+                                ? false // Admin/Supervisor ไม่ใช้สิทธิ์นี้
+                                : can_manage_graduate_level,
+              
+              from_cunet: from_cunet ?? false,
+            },
+            select: {
+              id: true,
+              username: true,
+              first_name: true,
+              last_name: true,
+              role: true,
+              faculty_code: true, // (ส่ง faculty_code กลับไปให้ยืนยัน)
+            },
+          });
+
+          return new Response(
+            JSON.stringify({ success: true, created: created }),
+            { status: 201, headers: { "Content-Type": "application/json" } }
+          );
+
+        } catch (error) {
+          if (
+            error instanceof Prisma.PrismaClientKnownRequestError &&
+            error.code === "P2002" // Unique constraint failed (Username ซ้ำ)
+          ) {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: "This username is already taken",
+              }),
+              { status: 409, headers: { "Content-Type": "application/json" } }
+            );
+          }
+          
+          // Error อื่นๆ
+          console.error("POST User Error:", error);
+          return new Response(
+            JSON.stringify({ success: false, error: "Internal server error" }),
+            { status: 500, headers: { "Content-Type": "application/json" } }
+          );
+        }
       },
     },
   },

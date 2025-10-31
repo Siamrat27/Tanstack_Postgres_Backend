@@ -7,7 +7,6 @@ import jwt from "jsonwebtoken"; // <-- 1. Import jwt
 export const Route = createFileRoute("/api/login")({
   server: {
     handlers: {
-      // (เราจะใช้ POST สำหรับการ login)
       POST: async ({ request }) => {
         const body = await request.json();
         const { username, password } = body;
@@ -28,9 +27,7 @@ export const Route = createFileRoute("/api/login")({
           where: { username: username },
         });
 
-        // 🛡️ (Security)
         // ถ้าไม่เจอ user หรือ user ไม่มี hash (เช่น สมัครแบบเก่า)
-        // ให้ส่ง 401 และใช้ข้อความกว้างๆ เพื่อป้องกันการเดา username
         if (!user || !user.password_hash) {
           return new Response(JSON.stringify({
             success: false,
@@ -44,7 +41,6 @@ export const Route = createFileRoute("/api/login")({
         // --- 4. เปรียบเทียบรหัสผ่าน ---
         const isMatch = await bcrypt.compare(password, user.password_hash);
 
-        // 🛡️ (Security)
         // ถ้ารหัสผ่านไม่ตรง
         if (!isMatch) {
           return new Response(JSON.stringify({
@@ -66,15 +62,14 @@ export const Route = createFileRoute("/api/login")({
             }), { status: 500 });
         }
         
-        // สร้าง "Payload" หรือข้อมูลที่เราจะเก็บใน Token
-        // (ห้ามใส่ข้อมูลลับ เช่น password_hash)
+        // ข้อมูลที่เราจะเก็บใน Token
         const payload = {
             id: user.id,
             username: user.username,
             role: user.role, // <-- field 'role' จาก schema ของคุณ
         };
 
-        // สร้าง Token ให้มีอายุ 1 ชั่วโมง (1h)
+        // Token มีอายุ 1 hour
         const token = jwt.sign(payload, secret, { expiresIn: '1h' });
 
         // --- 6. ส่ง Token กลับไปให้ Client ---
@@ -83,7 +78,7 @@ export const Route = createFileRoute("/api/login")({
           token: token,
           user: payload // (ส่งข้อมูล user กลับไปด้วยเผื่อ frontend ต้องใช้)
         }), {
-          status: 200, // 200 OK
+          status: 200, 
           headers: { "Content-Type": "application/json" },
         });
       },
