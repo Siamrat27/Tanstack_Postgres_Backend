@@ -10,6 +10,8 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TodosRouteImport } from './routes/todos'
+import { Route as LoginStaffRouteImport } from './routes/login-staff'
+import { Route as AdminDashboardRouteImport } from './routes/admin-dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
 import { Route as DemoPrismaRouteImport } from './routes/demo/prisma'
@@ -40,6 +42,16 @@ import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ss
 const TodosRoute = TodosRouteImport.update({
   id: '/todos',
   path: '/todos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginStaffRoute = LoginStaffRouteImport.update({
+  id: '/login-staff',
+  path: '/login-staff',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin-dashboard',
+  path: '/admin-dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -175,6 +187,8 @@ const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin-dashboard': typeof AdminDashboardRoute
+  '/login-staff': typeof LoginStaffRoute
   '/todos': typeof TodosRoute
   '/api/attends': typeof ApiAttendsRouteWithChildren
   '/api/diplomas': typeof ApiDiplomasRouteWithChildren
@@ -204,6 +218,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin-dashboard': typeof AdminDashboardRoute
+  '/login-staff': typeof LoginStaffRoute
   '/todos': typeof TodosRoute
   '/api/attends': typeof ApiAttendsRouteWithChildren
   '/api/diplomas': typeof ApiDiplomasRouteWithChildren
@@ -234,6 +250,8 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin-dashboard': typeof AdminDashboardRoute
+  '/login-staff': typeof LoginStaffRoute
   '/todos': typeof TodosRoute
   '/api/attends': typeof ApiAttendsRouteWithChildren
   '/api/diplomas': typeof ApiDiplomasRouteWithChildren
@@ -265,6 +283,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin-dashboard'
+    | '/login-staff'
     | '/todos'
     | '/api/attends'
     | '/api/diplomas'
@@ -294,6 +314,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin-dashboard'
+    | '/login-staff'
     | '/todos'
     | '/api/attends'
     | '/api/diplomas'
@@ -323,6 +345,8 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/admin-dashboard'
+    | '/login-staff'
     | '/todos'
     | '/api/attends'
     | '/api/diplomas'
@@ -353,6 +377,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  LoginStaffRoute: typeof LoginStaffRoute
   TodosRoute: typeof TodosRoute
   ApiAttendsRoute: typeof ApiAttendsRouteWithChildren
   ApiDiplomasRoute: typeof ApiDiplomasRouteWithChildren
@@ -382,6 +408,20 @@ declare module '@tanstack/react-router' {
       path: '/todos'
       fullPath: '/todos'
       preLoaderRoute: typeof TodosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login-staff': {
+      id: '/login-staff'
+      path: '/login-staff'
+      fullPath: '/login-staff'
+      preLoaderRoute: typeof LoginStaffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-dashboard': {
+      id: '/admin-dashboard'
+      path: '/admin-dashboard'
+      fullPath: '/admin-dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -643,6 +683,8 @@ const ApiUsersRouteWithChildren = ApiUsersRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
+  LoginStaffRoute: LoginStaffRoute,
   TodosRoute: TodosRoute,
   ApiAttendsRoute: ApiAttendsRouteWithChildren,
   ApiDiplomasRoute: ApiDiplomasRouteWithChildren,
