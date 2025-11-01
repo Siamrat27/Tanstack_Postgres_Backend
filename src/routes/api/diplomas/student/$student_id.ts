@@ -12,8 +12,8 @@ async function getCurrentUser(request: Request) {
     if (!secret) throw new Error("JWT_SECRET is not set");
 
     const decoded = jwt.verify(token, secret);
-    const payload = decoded as { id: number }; 
-    
+    const payload = decoded as { id: number };
+
     const user = await prisma.user.findUnique({
       where: { id: payload.id },
       select: { id: true, role: true, faculty_code: true },
@@ -33,16 +33,22 @@ export const Route = createFileRoute("/api/diplomas/student/$student_id")({
         try {
           const currentUser = await getCurrentUser(request);
           if (!currentUser) {
-            return new Response(JSON.stringify({ success: false, message: "Unauthorized" }), {
-              status: 401,
-              headers: { "Content-Type": "application/json" },
-            });
+            return new Response(
+              JSON.stringify({ success: false, message: "Unauthorized" }),
+              {
+                status: 401,
+                headers: { "Content-Type": "application/json" },
+              }
+            );
           }
 
           const studentId = params.student_id;
           if (!studentId) {
             return new Response(
-              JSON.stringify({ success: false, message: "Student ID is required" }),
+              JSON.stringify({
+                success: false,
+                message: "Student ID is required",
+              }),
               { status: 400, headers: { "Content-Type": "application/json" } }
             );
           }
@@ -57,7 +63,9 @@ export const Route = createFileRoute("/api/diplomas/student/$student_id")({
             );
           }
 
-          const diplomas = await prisma.diploma.findMany({ where: whereClause });
+          const diplomas = await prisma.diploma.findMany({
+            where: whereClause,
+          });
 
           if (!diplomas || diplomas.length === 0) {
             return new Response(
@@ -66,14 +74,20 @@ export const Route = createFileRoute("/api/diplomas/student/$student_id")({
             );
           }
 
-          return new Response(JSON.stringify({ success: true, data: diplomas }), {
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ success: true, data: diplomas }),
+            {
+              headers: { "Content-Type": "application/json" },
+            }
+          );
         } catch (error) {
-          return new Response(JSON.stringify({ success: false, error: "Internal Server Error" }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ success: false, error: "Internal Server Error" }),
+            {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
         }
       },
 
@@ -127,7 +141,7 @@ export const Route = createFileRoute("/api/diplomas/student/$student_id")({
       //       return new Response(JSON.stringify({ success: true, updated }), {
       //         headers: { "Content-Type": "application/json" },
       //       });
-      //     } 
+      //     }
       //     else if (currentUser.role === "Supervisor") {
       //       const updated = await prisma.diploma.updateMany({
       //         where: { student_id: studentId },
@@ -173,7 +187,7 @@ export const Route = createFileRoute("/api/diplomas/student/$student_id")({
       //       return new Response(JSON.stringify({ success: true, deleted }), {
       //         headers: { "Content-Type": "application/json" },
       //       });
-      //     } 
+      //     }
       //     else if (currentUser.role === "Supervisor") {
       //       const deleted = await prisma.diploma.deleteMany({ where: { student_id: studentId } });
       //       return new Response(JSON.stringify({ success: true, deleted }), {
