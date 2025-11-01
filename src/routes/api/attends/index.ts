@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { prisma } from "@/db";
 
-export const Route = createFileRoute("/api/attends")({
+export const Route = createFileRoute("/api/attends/")({
   server: {
     handlers: {
       GET: async () => {

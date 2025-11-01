@@ -2,7 +2,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { prisma } from "@/db";
 
-export const Route = createFileRoute("/api/graduates/$student_id")({
+export const Route = createFileRoute("/api/graduates/student/$student_id")({
   server: {
     handlers: {
       // GET /api/graduates/:student_id
