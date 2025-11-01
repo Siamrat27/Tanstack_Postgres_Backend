@@ -4,7 +4,6 @@ import { prisma } from "@/db";
 import { Prisma } from "@prisma/client";
 import jwt from "jsonwebtoken";
 
-// (ฟังก์ชัน getCurrentUser ที่เราทำไว้ก่อนหน้า - เหมือนเดิม)
 async function getCurrentUser(request: Request) {
   try {
     const authHeader = request.headers.get("Authorization");
@@ -51,13 +50,21 @@ export const Route = createFileRoute("/api/diplomas")({
 
           let whereClause: Prisma.DiplomaWhereInput = {};
 
-          // vvvv (จุดที่แก้ไข) vvvv
-          // ถ้า Role ไม่ใช่ 'admin' (และไม่ใช่ 'Supervisor')
-          if (currentUser.role !== "admin" && currentUser.role !== "Supervisor") {
-          // ^^^^ ---------------- ^^^^
+          // ถ้า Role เป็น 'Supervisor'
+          if (currentUser.role === "Supervisor") {
+            whereClause = {}; // Admin เห็นได้ทุกอย่าง
+          } 
+          else if (currentUser.role === "Professor") {
+            // Professor เห็นเฉพาะ faculty_code ของตนเอง
             whereClause = {
               faculty_code: currentUser.faculty_code,
             };
+          }
+          else {
+            return new Response(
+              JSON.stringify({ success: false, message: "Unauthorized" }),
+              { status: 401, headers: { "Content-Type": "application/json" } }
+            );
           }
 
           const diplomas = await prisma.diploma.findMany({
