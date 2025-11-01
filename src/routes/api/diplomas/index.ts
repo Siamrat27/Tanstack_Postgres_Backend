@@ -34,7 +34,7 @@ async function getCurrentUser(request: Request) {
   }
 }
 
-export const Route = createFileRoute("/api/diplomas")({
+export const Route = createFileRoute("/api/diplomas/")({
   server: {
     handlers: {
       GET: async ({ request }) => {
