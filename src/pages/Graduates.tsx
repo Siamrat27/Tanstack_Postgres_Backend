@@ -1,3 +1,4 @@
+// /src/pages/Graduates.tsx
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { authFetch } from "@/lib/authFetch";
@@ -7,7 +8,6 @@ type Diploma = {
   faculty_code: string;
   major_th: string;
   degree_th: string;
-  // ใส่ field เพิ่มเติมได้ เช่น grad_year, honor, order_no ฯลฯ
 };
 
 type DiplomasResponse = {
@@ -19,7 +19,7 @@ async function fetchDiplomas(): Promise<DiplomasResponse> {
   return authFetch<DiplomasResponse>("/api/diplomas");
 }
 
-export function DashboardPage() {
+export function GraduatesPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["diplomas"],
     queryFn: fetchDiplomas,
@@ -29,16 +29,8 @@ export function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div style={{ padding: 20 }}>
-        <div
-          style={{
-            display: "inline-block",
-            padding: "8px 12px",
-            border: "1px solid #ddd",
-            borderRadius: 8,
-            background: "#fafafa",
-          }}
-        >
+      <div className="px-4 py-6">
+        <div className="inline-block rounded-lg border border-rose-100 bg-white px-3 py-2 shadow-sm">
           กำลังโหลดข้อมูล…
         </div>
       </div>
@@ -48,9 +40,12 @@ export function DashboardPage() {
   if (isError) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     return (
-      <div style={{ padding: 20, color: "red" }}>
+      <div className="px-4 py-6 text-red-700">
         เกิดข้อผิดพลาด: {msg}
-        <button onClick={() => refetch()} style={{ marginLeft: 8 }}>
+        <button
+          onClick={() => refetch()}
+          className="ml-3 rounded border border-red-200 px-2 py-1 text-sm hover:bg-red-50"
+        >
           ลองใหม่
         </button>
       </div>
@@ -60,46 +55,35 @@ export function DashboardPage() {
   const diplomas = data?.data ?? [];
 
   return (
-    <div style={{ padding: 20 }}>
-      <h1 style={{ marginBottom: 8 }}>Dashboard</h1>
-      <p style={{ marginBottom: 16 }}>
-        คุณล็อกอินสำเร็จ นี่คือข้อมูล Diploma (ตามสิทธิ์ของคุณ):{" "}
+    <div className="px-4 py-6">
+      <h1 className="text-2xl font-bold text-rose-900">Graduates</h1>
+      <p className="mt-2 text-slate-600">
+        ข้อมูล Diploma ตามสิทธิ์ของคุณ:{" "}
         <strong>{diplomas.length.toLocaleString()}</strong> รายการ
       </p>
 
       {diplomas.length === 0 ? (
-        <div
-          style={{
-            padding: 12,
-            border: "1px dashed #ddd",
-            borderRadius: 8,
-            background: "#fcfcfc",
-          }}
-        >
+        <div className="mt-4 rounded-lg border border-rose-100 bg-white p-4 text-slate-600 shadow-sm">
           ไม่พบข้อมูล Diploma (สำหรับสิทธิ์ของคุณ)
         </div>
       ) : (
-        <div style={{ overflowX: "auto" }}>
-          <table
-            border={1}
-            cellPadding={8}
-            style={{ borderCollapse: "collapse", width: "100%", minWidth: 640 }}
-          >
-            <thead style={{ background: "#f7f7f7" }}>
+        <div className="mt-4 overflow-x-auto rounded-lg border border-rose-100 bg-white shadow-sm">
+          <table className="min-w-[640px] w-full border-collapse">
+            <thead className="bg-rose-50 text-left">
               <tr>
-                <th align="left">ID</th>
-                <th align="left">คณะ (Code)</th>
-                <th align="left">สาขา (TH)</th>
-                <th align="left">ปริญญา (TH)</th>
+                <th className="px-3 py-2">ID</th>
+                <th className="px-3 py-2">คณะ (Code)</th>
+                <th className="px-3 py-2">สาขา (TH)</th>
+                <th className="px-3 py-2">ปริญญา (TH)</th>
               </tr>
             </thead>
             <tbody>
               {diplomas.map((d) => (
-                <tr key={d.id}>
-                  <td>{d.id}</td>
-                  <td>{d.faculty_code}</td>
-                  <td>{d.major_th}</td>
-                  <td>{d.degree_th}</td>
+                <tr key={d.id} className="odd:bg-white even:bg-rose-50/30">
+                  <td className="px-3 py-2">{d.id}</td>
+                  <td className="px-3 py-2">{d.faculty_code}</td>
+                  <td className="px-3 py-2">{d.major_th}</td>
+                  <td className="px-3 py-2">{d.degree_th}</td>
                 </tr>
               ))}
             </tbody>
