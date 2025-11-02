@@ -4,24 +4,16 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 
 type JwtUser = {
   username?: string;
-  role?: "Admin" | "Supervisor" | string;
+  role?: string;
   faculty_code?: string | null;
 };
 
 const NAV_LINKS: { to: string; label: string; roles?: string[] }[] = [
   { to: "/dashboard", label: "ภาพรวม" },
-  {
-    to: "/graduates",
-    label: "รายชื่่อบัณฑิต",
-    roles: ["admin", "Supervisor"],
-  },
+  { to: "/graduates", label: "รายชื่อบัณฑิต", roles: ["admin", "supervisor"] },
   { to: "/schedules", label: "บัณฑิตซ้อมนอกรอบ" },
-  { to: "/settings", label: "ปรับตั้งค่า", roles: ["supervisor", "admin"] }, // CHANGED
+  { to: "/settings", label: "ปรับตั้งค่า", roles: ["supervisor", "admin"] },
 ];
-
-// Chula palette
-const CHULA_PINK = "#E4007E";
-const CHULA_PINK_DARK = "#B0005C";
 
 const isBrowser = typeof window !== "undefined";
 
@@ -39,7 +31,6 @@ function safeClearToken() {
     window.localStorage.removeItem("authToken");
   } catch {}
 }
-
 function decodeJwtUser(token: string | null): JwtUser | null {
   if (!token) return null;
   try {
@@ -56,17 +47,13 @@ export default function Navbar() {
   const { location } = useRouterState();
   const [open, setOpen] = React.useState(false);
 
-  // Disable auth-dependent behavior on login routes
   const isAuthDisabled =
     location.pathname === "/" || location.pathname.startsWith("/login");
-
-  // Read token only on client when auth is enabled
   const [token, setToken] = React.useState<string | null>(null);
+
   React.useEffect(() => {
     if (!isAuthDisabled) setToken(safeGetToken());
   }, [isAuthDisabled]);
-
-  // Sync token across tabs
   React.useEffect(() => {
     if (!isBrowser || isAuthDisabled) return;
     const onStorage = (e: StorageEvent) => {
@@ -77,17 +64,17 @@ export default function Navbar() {
   }, [isAuthDisabled]);
 
   const user = React.useMemo(() => decodeJwtUser(token), [token]);
+  const roleLc = (user?.role ?? "").toString().toLowerCase();
 
   function isActive(to: string) {
-    if (to === "/dashboard") return location.pathname === "/dashboard";
-    return location.pathname.startsWith(to);
+    return to === "/dashboard"
+      ? location.pathname === "/dashboard"
+      : location.pathname.startsWith(to);
   }
 
   const visibleLinks =
     token && !isAuthDisabled
-      ? NAV_LINKS.filter((l) =>
-          l.roles ? (user?.role ? l.roles.includes(user.role) : false) : true
-        )
+      ? NAV_LINKS.filter((l) => (l.roles ? l.roles.includes(roleLc) : true))
       : [];
 
   const onLogout = () => {
@@ -97,16 +84,14 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full bg-white/85 backdrop-blur-md shadow-[0_1px_0_0_rgba(228,0,126,0.15)]">
-      {/* Brand accent line */}
       <div
         aria-hidden
         className="h-0.5 w-full"
         style={{
-          background: `linear-gradient(90deg, ${CHULA_PINK}, ${CHULA_PINK_DARK}, ${CHULA_PINK})`,
+          background: "linear-gradient(90deg, #E4007E, #B0005C, #E4007E)",
         }}
       />
       <nav className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-3 sm:px-4">
-        {/* Left: brand */}
         <div className="flex items-center gap-3">
           <button
             className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-transparent hover:bg-rose-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-300 md:hidden"
@@ -116,13 +101,11 @@ export default function Navbar() {
           >
             <MenuIcon className="h-5 w-5 text-rose-700" />
           </button>
-
           <Link
             to="/dashboard"
             className="group inline-flex items-center gap-2 rounded-md px-1 py-1 no-underline"
-            title="Chula Ceremony Console"
+            title="Chula Ceremony"
           >
-            {/* Use your logo image here */}
             <img
               src="/logo.png"
               alt="Chulalongkorn University"
@@ -131,7 +114,7 @@ export default function Navbar() {
             <div className="leading-tight">
               <span
                 className="block text-[15px] font-extrabold"
-                style={{ color: CHULA_PINK_DARK }}
+                style={{ color: "#B0005C" }}
               >
                 CHULA
               </span>
@@ -142,7 +125,7 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Center: links (desktop) */}
+        {/* Center */}
         <ul className="hidden items-center gap-1 md:flex">
           {visibleLinks.map((l) => {
             const active = isActive(l.to);
@@ -160,19 +143,19 @@ export default function Navbar() {
                   style={
                     active
                       ? {
-                          background: `linear-gradient(90deg, ${CHULA_PINK}, ${CHULA_PINK_DARK})`,
+                          background:
+                            "linear-gradient(90deg, #E4007E, #B0005C)",
                         }
                       : undefined
                   }
                 >
                   {l.label}
-                  {/* active underline highlight */}
                   {active ? (
                     <span
                       aria-hidden
                       className="pointer-events-none absolute inset-x-2 -bottom-[6px] h-[3px] rounded-full"
                       style={{
-                        background: `linear-gradient(90deg, ${CHULA_PINK}, ${CHULA_PINK_DARK})`,
+                        background: "linear-gradient(90deg, #E4007E, #B0005C)",
                         opacity: 0.7,
                       }}
                     />
@@ -183,36 +166,33 @@ export default function Navbar() {
           })}
         </ul>
 
-        {/* Right: auth/menu */}
         <div className="flex items-center gap-2">
           {isAuthDisabled || !token ? (
-            // Hide the login button if already on '/' or '/login'
             location.pathname === "/" ||
             location.pathname.startsWith("/login") ? null : (
               <Link
-                to="/"
+                to="/login"
                 className="inline-flex items-center rounded-lg border px-3 py-1.5 text-sm font-semibold transition"
                 style={{
-                  borderColor: `${CHULA_PINK}33`,
-                  color: CHULA_PINK_DARK,
+                  borderColor: "#E4007E33",
+                  color: "#B0005C",
                 }}
               >
                 เข้าสู่ระบบ
               </Link>
             )
           ) : (
-            <UserMenu user={user} onLogout={onLogout} />
+            <UserMenu user={user} roleLc={roleLc} onLogout={onLogout} />
           )}
         </div>
       </nav>
 
-      {/* Mobile drawer */}
       <div
         className={[
           "md:hidden transition-[max-height] duration-300 overflow-hidden border-t",
           open ? "max-h-80" : "max-h-0",
         ].join(" ")}
-        style={{ borderColor: `${CHULA_PINK}26` }}
+        style={{ borderColor: "#E4007E26" }}
       >
         <ul className="px-3 py-2">
           {visibleLinks.map((l) => {
@@ -229,7 +209,8 @@ export default function Navbar() {
                   style={
                     active
                       ? {
-                          background: `linear-gradient(90deg, ${CHULA_PINK}, ${CHULA_PINK_DARK})`,
+                          background:
+                            "linear-gradient(90deg, #E4007E, #B0005C)",
                         }
                       : undefined
                   }
@@ -239,7 +220,7 @@ export default function Navbar() {
               </li>
             );
           })}
-          {!isAuthDisabled && token ? (
+          {!!token && !isAuthDisabled ? (
             <button
               onClick={() => {
                 setOpen(false);
@@ -247,7 +228,7 @@ export default function Navbar() {
               }}
               className="mt-1 w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-white"
               style={{
-                background: `linear-gradient(90deg, ${CHULA_PINK}, ${CHULA_PINK_DARK})`,
+                background: "linear-gradient(90deg, #E4007E, #B0005C)",
               }}
             >
               ออกจากระบบ
@@ -259,38 +240,35 @@ export default function Navbar() {
   );
 }
 
-/* ----------------- Small UI bits ----------------- */
-
 function UserMenu({
   user,
+  roleLc,
   onLogout,
 }: {
   user: JwtUser | null;
+  roleLc: string;
   onLogout: () => void;
 }) {
   const [open, setOpen] = React.useState(false);
   const label = user?.username ?? "User";
-  const role = user?.role ?? "guest";
   const faculty = user?.faculty_code;
-
   return (
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
         className="inline-flex items-center gap-2 rounded-lg border bg-white px-2.5 py-1.5 text-sm font-medium shadow-sm transition hover:bg-rose-50 focus:outline-none focus-visible:ring-2"
-        style={{ borderColor: `${CHULA_PINK}33`, color: CHULA_PINK_DARK }}
+        style={{ borderColor: "#E4007E33", color: "#B0005C" }}
         aria-expanded={open}
       >
         <Avatar seed={label} />
         <span className="max-w-[9rem] truncate">{label}</span>
         <ChevronDown className="h-4 w-4 opacity-70" />
       </button>
-
       {open && (
         <div
           role="menu"
           className="absolute right-0 mt-2 w-60 overflow-hidden rounded-xl border bg-white shadow-lg"
-          style={{ borderColor: `${CHULA_PINK}26` }}
+          style={{ borderColor: "#E4007E26" }}
           onMouseLeave={() => setOpen(false)}
         >
           <div className="px-3 py-2 text-xs text-slate-500">
@@ -299,7 +277,7 @@ function UserMenu({
           <div className="px-3 pb-2">
             <div className="text-sm font-semibold text-slate-800">{label}</div>
             <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
-              <RoleBadge role={role} />
+              <RoleBadge role={roleLc} />
               {faculty ? (
                 <span className="rounded bg-rose-50 px-1.5 py-0.5">
                   คณะ {faculty}
@@ -307,14 +285,11 @@ function UserMenu({
               ) : null}
             </div>
           </div>
-          <div
-            className="border-t"
-            style={{ borderColor: `${CHULA_PINK}26` }}
-          />
+          <div className="border-t" style={{ borderColor: "#E4007E26" }} />
           <button
             onClick={onLogout}
             className="block w-full px-4 py-2 text-left text-sm transition hover:bg-rose-50"
-            style={{ color: CHULA_PINK_DARK }}
+            style={{ color: "#B0005C" }}
           >
             ออกจากระบบ
           </button>
@@ -327,6 +302,7 @@ function UserMenu({
 function RoleBadge({ role }: { role: string }) {
   const map: Record<string, string> = {
     admin: "bg-emerald-100 text-emerald-700",
+    supervisor: "bg-fuchsia-100 text-fuchsia-700",
     registry: "bg-sky-100 text-sky-700",
     faculty: "bg-violet-100 text-violet-700",
     helpdesk: "bg-amber-100 text-amber-800",
@@ -335,9 +311,9 @@ function RoleBadge({ role }: { role: string }) {
   };
   return (
     <span
-      className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-semibold ${map[role] ?? map["staff"]}`}
+      className={`inline-flex items-center rounded px-1.5 py-0.5 text-[11px] font-semibold ${map[role] ?? map["guest"]}`}
     >
-      {role}
+      {role || "guest"}
     </span>
   );
 }
@@ -352,13 +328,12 @@ function Avatar({ seed }: { seed: string }) {
   return (
     <span
       className="inline-flex h-6 w-6 select-none items-center justify-center rounded-full text-[11px] font-bold text-white"
-      style={{ background: CHULA_PINK }}
+      style={{ background: "#E4007E" }}
     >
       {initials || "U"}
     </span>
   );
 }
-
 function MenuIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" {...props} aria-hidden="true">

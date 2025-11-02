@@ -9,9 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as GraduatesRouteImport } from './routes/graduates'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsUsersRouteImport } from './routes/settings.users'
 import { Route as ApiUsersRouteImport } from './routes/api/users'
 import { Route as ApiTodosRouteImport } from './routes/api/todos'
 import { Route as ApiSchedulesRouteImport } from './routes/api/schedules'
@@ -28,9 +31,19 @@ import { Route as ApiGraduatesStudent_idRouteImport } from './routes/api/graduat
 import { Route as ApiDiplomasIdRouteImport } from './routes/api/diplomas.$id'
 import { Route as ApiAttendsIdRouteImport } from './routes/api/attends.$id'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GraduatesRoute = GraduatesRouteImport.update({
+  id: '/graduates',
+  path: '/graduates',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -42,6 +55,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsUsersRoute = SettingsUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => SettingsRoute,
 } as any)
 const ApiUsersRoute = ApiUsersRouteImport.update({
   id: '/api/users',
@@ -122,7 +140,9 @@ const ApiAttendsIdRoute = ApiAttendsIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/graduates': typeof GraduatesRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/api/attends': typeof ApiAttendsRouteWithChildren
   '/api/diplomas': typeof ApiDiplomasRouteWithChildren
   '/api/graduates': typeof ApiGraduatesRouteWithChildren
@@ -132,6 +152,7 @@ export interface FileRoutesByFullPath {
   '/api/schedules': typeof ApiSchedulesRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
   '/api/users': typeof ApiUsersRouteWithChildren
+  '/settings/users': typeof SettingsUsersRoute
   '/api/attends/$id': typeof ApiAttendsIdRoute
   '/api/diplomas/$id': typeof ApiDiplomasIdRoute
   '/api/graduates/$student_id': typeof ApiGraduatesStudent_idRoute
@@ -142,7 +163,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/graduates': typeof GraduatesRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/api/attends': typeof ApiAttendsRouteWithChildren
   '/api/diplomas': typeof ApiDiplomasRouteWithChildren
   '/api/graduates': typeof ApiGraduatesRouteWithChildren
@@ -152,6 +175,7 @@ export interface FileRoutesByTo {
   '/api/schedules': typeof ApiSchedulesRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
   '/api/users': typeof ApiUsersRouteWithChildren
+  '/settings/users': typeof SettingsUsersRoute
   '/api/attends/$id': typeof ApiAttendsIdRoute
   '/api/diplomas/$id': typeof ApiDiplomasIdRoute
   '/api/graduates/$student_id': typeof ApiGraduatesStudent_idRoute
@@ -163,7 +187,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/graduates': typeof GraduatesRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRouteWithChildren
   '/api/attends': typeof ApiAttendsRouteWithChildren
   '/api/diplomas': typeof ApiDiplomasRouteWithChildren
   '/api/graduates': typeof ApiGraduatesRouteWithChildren
@@ -173,6 +199,7 @@ export interface FileRoutesById {
   '/api/schedules': typeof ApiSchedulesRouteWithChildren
   '/api/todos': typeof ApiTodosRoute
   '/api/users': typeof ApiUsersRouteWithChildren
+  '/settings/users': typeof SettingsUsersRoute
   '/api/attends/$id': typeof ApiAttendsIdRoute
   '/api/diplomas/$id': typeof ApiDiplomasIdRoute
   '/api/graduates/$student_id': typeof ApiGraduatesStudent_idRoute
@@ -185,7 +212,9 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/graduates'
     | '/login'
+    | '/settings'
     | '/api/attends'
     | '/api/diplomas'
     | '/api/graduates'
@@ -195,6 +224,7 @@ export interface FileRouteTypes {
     | '/api/schedules'
     | '/api/todos'
     | '/api/users'
+    | '/settings/users'
     | '/api/attends/$id'
     | '/api/diplomas/$id'
     | '/api/graduates/$student_id'
@@ -205,7 +235,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/dashboard'
+    | '/graduates'
     | '/login'
+    | '/settings'
     | '/api/attends'
     | '/api/diplomas'
     | '/api/graduates'
@@ -215,6 +247,7 @@ export interface FileRouteTypes {
     | '/api/schedules'
     | '/api/todos'
     | '/api/users'
+    | '/settings/users'
     | '/api/attends/$id'
     | '/api/diplomas/$id'
     | '/api/graduates/$student_id'
@@ -225,7 +258,9 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/dashboard'
+    | '/graduates'
     | '/login'
+    | '/settings'
     | '/api/attends'
     | '/api/diplomas'
     | '/api/graduates'
@@ -235,6 +270,7 @@ export interface FileRouteTypes {
     | '/api/schedules'
     | '/api/todos'
     | '/api/users'
+    | '/settings/users'
     | '/api/attends/$id'
     | '/api/diplomas/$id'
     | '/api/graduates/$student_id'
@@ -246,7 +282,9 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  GraduatesRoute: typeof GraduatesRoute
   LoginRoute: typeof LoginRoute
+  SettingsRoute: typeof SettingsRouteWithChildren
   ApiAttendsRoute: typeof ApiAttendsRouteWithChildren
   ApiDiplomasRoute: typeof ApiDiplomasRouteWithChildren
   ApiGraduatesRoute: typeof ApiGraduatesRouteWithChildren
@@ -260,11 +298,25 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/graduates': {
+      id: '/graduates'
+      path: '/graduates'
+      fullPath: '/graduates'
+      preLoaderRoute: typeof GraduatesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -280,6 +332,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/settings/users': {
+      id: '/settings/users'
+      path: '/users'
+      fullPath: '/settings/users'
+      preLoaderRoute: typeof SettingsUsersRouteImport
+      parentRoute: typeof SettingsRoute
     }
     '/api/users': {
       id: '/api/users'
@@ -389,6 +448,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface SettingsRouteChildren {
+  SettingsUsersRoute: typeof SettingsUsersRoute
+}
+
+const SettingsRouteChildren: SettingsRouteChildren = {
+  SettingsUsersRoute: SettingsUsersRoute,
+}
+
+const SettingsRouteWithChildren = SettingsRoute._addFileChildren(
+  SettingsRouteChildren,
+)
+
 interface ApiAttendsRouteChildren {
   ApiAttendsIdRoute: typeof ApiAttendsIdRoute
 }
@@ -464,7 +535,9 @@ const ApiUsersRouteWithChildren = ApiUsersRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  GraduatesRoute: GraduatesRoute,
   LoginRoute: LoginRoute,
+  SettingsRoute: SettingsRouteWithChildren,
   ApiAttendsRoute: ApiAttendsRouteWithChildren,
   ApiDiplomasRoute: ApiDiplomasRouteWithChildren,
   ApiGraduatesRoute: ApiGraduatesRouteWithChildren,

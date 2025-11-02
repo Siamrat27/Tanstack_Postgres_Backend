@@ -1,9 +1,12 @@
+// /src/routes/__root.tsx
 import * as React from "react";
 import {
   HeadContent,
   Scripts,
   createRootRouteWithContext,
-  Link, // ⬅️ add
+  Link,
+  useNavigate, // ⬅️ add
+  useRouterState, // ⬅️ add
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
@@ -18,7 +21,6 @@ interface MyRouterContext {
   queryClient: QueryClient;
 }
 
-// --- New: nice 404 component
 function NotFoundView() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-16">
@@ -42,7 +44,6 @@ function NotFoundView() {
   );
 }
 
-// --- New: root error boundary (for unexpected route errors)
 function RootError({ error }: { error: unknown }) {
   const message =
     error instanceof Error ? error.message : "เกิดข้อผิดพลาดที่ไม่คาดคิด";
@@ -73,12 +74,88 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     ],
     links: [{ rel: "stylesheet", href: appCss }],
   }),
-  // ⬇️ Add these two to remove the warning & improve DX
   notFoundComponent: NotFoundView,
   errorComponent: RootError,
-
   shellComponent: RootDocument,
 });
+
+/** ---------- Global Client Guard (จุดเดียวพอ) ---------- */
+function ClientAuthGate() {
+  const navigate = useNavigate();
+  const { location } = useRouterState();
+
+  // หน้า public ที่ไม่ต้องมี token
+  const isPublic = React.useMemo(() => {
+    const p = location.pathname;
+    return p === "/" || p.startsWith("/login");
+  }, [location.pathname]);
+
+  // กฎ role ราย path (แก้/เพิ่มได้ที่นี่)
+  const ROLE_RULES = React.useMemo(
+    () => [
+      { pattern: /^\/settings\/users(\/|$)/, roles: ["admin", "supervisor"] },
+      { pattern: /^\/settings(\/|$)/, roles: ["admin", "supervisor"] },
+      { pattern: /^\/graduates(\/|$)/, roles: ["admin", "supervisor"] },
+      // { pattern: /^\/attends(\/|$)/,     roles: [...] },
+      // { pattern: /^\/schedules(\/|$)/,   roles: [...] },
+    ],
+    []
+  );
+
+  React.useEffect(() => {
+    // client-only
+    if (typeof window === "undefined") return;
+
+    // อย่าแตะหน้า public
+    if (isPublic) return;
+
+    // อ่าน token
+    let token: string | null = null;
+    try {
+      token = localStorage.getItem("authToken");
+    } catch {}
+
+    // ไม่มี token → ส่งไป login พร้อมจำ path ปัจจุบัน
+    if (!token) {
+      navigate({
+        to: "/login",
+        search: {
+          redirect:
+            location.pathname +
+            (location.search ? location.search : "") +
+            (location.hash ? location.hash : ""),
+        } as any,
+        replace: true,
+      });
+      return;
+    }
+
+    // decode role
+    let roleLc = "";
+    try {
+      const [, payload] = token.split(".");
+      const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+      roleLc = (JSON.parse(json)?.role ?? "").toString().toLowerCase();
+    } catch {
+      // token เสียรูป → ส่งไป login
+      navigate({
+        to: "/login",
+        search: { redirect: location.pathname } as any,
+        replace: true,
+      });
+      return;
+    }
+
+    // ตรวจ rule เฉพาะ path ที่กำหนด
+    const rule = ROLE_RULES.find((r) => r.pattern.test(location.pathname));
+    if (rule && !rule.roles.includes(roleLc)) {
+      // มี token แต่ role ไม่ผ่าน → ส่งกลับ dashboard
+      navigate({ to: "/dashboard", replace: true });
+    }
+  }, [location.pathname, isPublic, navigate, ROLE_RULES]);
+
+  return null;
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
@@ -87,7 +164,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="min-h-full text-slate-800 antialiased">
-        {/* Background (optional; keep if you added background.png earlier) */}
+        {/* พื้นหลัง */}
         <div
           aria-hidden
           className="fixed inset-0 -z-10 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat bg-fixed"
@@ -96,6 +173,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           aria-hidden
           className="fixed inset-0 -z-10 bg-white/70 backdrop-blur-[2px]"
         />
+
+        {/* ✅ Global client-side guard */}
+        <ClientAuthGate />
 
         <Navbar />
 
