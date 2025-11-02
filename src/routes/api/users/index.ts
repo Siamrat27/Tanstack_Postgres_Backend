@@ -4,7 +4,7 @@ import { prisma } from "@/db";
 import bcrypt from "bcrypt";
 import { Prisma } from "@prisma/client"; // (Import เพิ่ม)
 
-export const Route = createFileRoute("/api/users")({
+export const Route = createFileRoute("/api/users/")({
   server: {
     handlers: {
       GET: async () => {

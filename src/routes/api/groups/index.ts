@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router"
 // groups.ts
-export const Route = createFileRoute("/api/groups")({
+export const Route = createFileRoute("/api/groups/")({
   server: {
     handlers: {
       GET: async () => {

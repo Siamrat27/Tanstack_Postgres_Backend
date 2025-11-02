@@ -43,8 +43,11 @@ model Diploma {
   student_id        String?
   graduate_id       Int?
   barcode           String?
+  first_attend      Boolean?
+  second_attend     Boolean?
   extra_attend      Boolean?
   eligible_receive  Boolean?
+  grad_year         Int?
   order_no          Int?
   order_display     String?
   rehearsal_seat_no String?

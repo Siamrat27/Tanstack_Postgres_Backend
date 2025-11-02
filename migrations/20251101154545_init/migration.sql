@@ -1,25 +1,27 @@
-/*
-  Warnings:
-
-  - You are about to drop the column `reading_first_name` on the `Graduate` table. All the data in the column will be lost.
-  - You are about to drop the column `reading_last_name` on the `Graduate` table. All the data in the column will be lost.
-  - You are about to drop the `Todo` table. If the table is not empty, all the data it contains will be lost.
-
-*/
 -- CreateEnum
 CREATE TYPE "RoundType" AS ENUM ('rehearsal1', 'rehearsal2', 'ceremony', 'special');
 
--- DropIndex
-DROP INDEX "CCR"."Graduate_barcode_key";
+-- CreateTable
+CREATE TABLE "Graduate" (
+    "id" SERIAL NOT NULL,
+    "student_id" TEXT,
+    "prefix_th" TEXT,
+    "first_name_th" TEXT,
+    "last_name_th" TEXT,
+    "prefix_en" TEXT,
+    "first_name_en" TEXT,
+    "last_name_en" TEXT,
+    "barcode" TEXT,
+    "gender" TEXT,
+    "citizen_id" TEXT,
+    "passport_no" TEXT,
+    "ccr_barcode" TEXT,
+    "do_survey" BOOLEAN DEFAULT false,
+    "karaoke_first_name" TEXT,
+    "karaoke_last_name" TEXT,
 
--- AlterTable
-ALTER TABLE "Graduate" DROP COLUMN "reading_first_name",
-DROP COLUMN "reading_last_name",
-ADD COLUMN     "karaoke_first_name" TEXT,
-ADD COLUMN     "karaoke_last_name" TEXT;
-
--- DropTable
-DROP TABLE "CCR"."Todo";
+    CONSTRAINT "Graduate_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "Diploma" (
@@ -35,6 +37,8 @@ CREATE TABLE "Diploma" (
     "student_id" TEXT,
     "graduate_id" INTEGER,
     "barcode" TEXT,
+    "first_attend" BOOLEAN,
+    "second_attend" BOOLEAN,
     "extra_attend" BOOLEAN,
     "eligible_receive" BOOLEAN,
     "order_no" INTEGER,
@@ -112,6 +116,21 @@ CREATE TABLE "Faculty" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Graduate_student_id_key" ON "Graduate"("student_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Graduate_citizen_id_key" ON "Graduate"("citizen_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Graduate_passport_no_key" ON "Graduate"("passport_no");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Graduate_ccr_barcode_key" ON "Graduate"("ccr_barcode");
+
+-- CreateIndex
+CREATE INDEX "Graduate_student_id_idx" ON "Graduate"("student_id");
+
+-- CreateIndex
 CREATE INDEX "Diploma_graduate_id_idx" ON "Diploma"("graduate_id");
 
 -- CreateIndex
@@ -143,9 +162,6 @@ CREATE UNIQUE INDEX "Attend_group_id_schedule_id_key" ON "Attend"("group_id", "s
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Faculty_faculty_code_key" ON "Faculty"("faculty_code");
-
--- CreateIndex
-CREATE INDEX "Graduate_student_id_idx" ON "Graduate"("student_id");
 
 -- AddForeignKey
 ALTER TABLE "Diploma" ADD CONSTRAINT "Diploma_graduate_id_fkey" FOREIGN KEY ("graduate_id") REFERENCES "Graduate"("id") ON DELETE SET NULL ON UPDATE CASCADE;
