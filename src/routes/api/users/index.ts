@@ -3,14 +3,43 @@ import { createFileRoute } from "@tanstack/react-router";
 import { prisma } from "@/db";
 import bcrypt from "bcrypt";
 import { Prisma } from "@prisma/client"; // (Import เพิ่ม)
+import jwt from "jsonwebtoken";
+
+// ------------------------------------------------------------------
+async function getCurrentUser(request: Request) {
+  try {
+    const authHeader = request.headers.get("Authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
+    const token = authHeader.split(" ")[1];
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error("JWT_SECRET is not set");
+
+    const decoded = jwt.verify(token, secret);
+    const payload = decoded as { id: number }; 
+    
+    const user = await prisma.user.findUnique({
+      where: { id: payload.id },
+      select: { id: true, role: true, faculty_code: true },
+    });
+    return user;
+  } catch (error) {
+    return null;
+  }
+}
 
 export const Route = createFileRoute("/api/users/")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({request}) => {
+        try {
+          const currentUser = await getCurrentUser(request);
+        if (!currentUser || (currentUser.role !== "Supervisor")) {
+          return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { status: 403 });
+        }
+
         // (GET handler - แนะนำให้ select field ที่ปลอดภัย)
         const data = await prisma.user.findMany({
-          orderBy: { id: "asc" },
+          orderBy: [{faculty_code: "asc"},{ id: "asc" }],
           select: {
             id: true,
             username: true,
@@ -18,17 +47,29 @@ export const Route = createFileRoute("/api/users/")({
             last_name: true,
             role: true,
             faculty_code: true,
+            from_cunet: true,
             can_manage_undergrad_level: true,
             can_manage_graduate_level: true,
           },
         });
+
         return new Response(JSON.stringify({ success: true, data }), {
           headers: { "Content-Type": "application/json" },
         });
+        } catch (error) {
+          console.error("GET /api/users Error:", error);
+          return new Response(JSON.stringify({ success: false, error: "Internal server error" }), { status: 500 });
+        }
       },
 
       POST: async ({ request }) => {
         try {
+
+          const currentUser = await getCurrentUser(request);
+          if (!currentUser || (currentUser.role !== "Supervisor")) {
+            return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { status: 403 });
+          }
+
           const body = await request.json();
 
           const {
@@ -49,6 +90,16 @@ export const Route = createFileRoute("/api/users/")({
               JSON.stringify({
                 success: false,
                 error: "Username and password are required",
+              }),
+              { status: 400, headers: { "Content-Type": "application/json" } }
+            );
+          }
+
+          if (role === 'Professor' && !faculty_code) {
+            return new Response(
+              JSON.stringify({
+                success: false,
+                error: "Faculty code is required for Professor role",
               }),
               { status: 400, headers: { "Content-Type": "application/json" } }
             );
@@ -111,7 +162,7 @@ export const Route = createFileRoute("/api/users/")({
           }
           
           // Error อื่นๆ
-          console.error("POST User Error:", error);
+          // console.error("POST User Error:", error);
           return new Response(
             JSON.stringify({ success: false, error: "Internal server error" }),
             { status: 500, headers: { "Content-Type": "application/json" } }

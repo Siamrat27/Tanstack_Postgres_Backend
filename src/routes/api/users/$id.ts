@@ -5,8 +5,6 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
 // ------------------------------------------------------------------
-// (ฟังก์ชัน getCurrentUser - เหมือนเดิม, เราจะเรียกใช้บ่อยขึ้น)
-// ------------------------------------------------------------------
 async function getCurrentUser(request: Request) {
   try {
     const authHeader = request.headers.get("Authorization");
@@ -52,12 +50,13 @@ export const Route = createFileRoute("/api/users/$id")({
             last_name: true,
             role: true,
             faculty_code: true,
+            from_cunet: true,
             can_manage_undergrad_level: true,
             can_manage_graduate_level: true,
           }
         });
         
-        if (!data) { /* ... (return 404) ... */ }
+        // if (!data) { /* ... (return 404) ... */ }
         return new Response(JSON.stringify({ success: true, data }));
       },
       
