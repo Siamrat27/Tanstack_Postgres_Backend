@@ -45,10 +45,7 @@ export const Route = createFileRoute("/api/diplomas/student/$student_id")({
           const studentId = params.student_id;
           if (!studentId) {
             return new Response(
-              JSON.stringify({
-                success: false,
-                message: "Student ID is required",
-              }),
+              JSON.stringify({ success: false, message: "Student ID not found" }),
               { status: 400, headers: { "Content-Type": "application/json" } }
             );
           }
@@ -69,7 +66,7 @@ export const Route = createFileRoute("/api/diplomas/student/$student_id")({
 
           if (!diplomas || diplomas.length === 0) {
             return new Response(
-              JSON.stringify({ success: false, message: "No diplomas found" }),
+              JSON.stringify({ success: false, message: "No data found" }),
               { status: 404, headers: { "Content-Type": "application/json" } }
             );
           }
