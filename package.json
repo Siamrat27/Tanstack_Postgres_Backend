@@ -38,6 +38,7 @@
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {
+    "@tanstack/router-vite-plugin": "^1.136.8",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/react": "^16.2.0",
     "@types/bcrypt": "^6.0.0",

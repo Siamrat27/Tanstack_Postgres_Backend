@@ -78,3 +78,5 @@ coverage/
 *.bak
 *.orig
 *.tmp
+
+/src/routeTree.gen.ts

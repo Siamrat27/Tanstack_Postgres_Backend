@@ -1,23 +1,14 @@
+// /src/pages/Login.tsx
 import * as React from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import {
+  staffLogin,
+  type StaffLoginRequest,
+  type StaffLoginResponse,
+} from "@/api/auth";
+import { TextField, PasswordField } from "@/components/TextField";
 
-// --- API call (unchanged)
-async function staffLoginApi(variables: {
-  username: string;
-  password: string;
-}) {
-  const res = await fetch("/api/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(variables),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || "Login failed");
-  return data;
-}
-
-// Chula palette (approx.)
 const CHULA_PINK = "#E4007E";
 const CHULA_PINK_DARK = "#B0005C";
 const CHULA_ROSE_50 = "#FFF2F7";
@@ -29,13 +20,13 @@ export default function LoginPage() {
   const [lang, setLang] = React.useState<"th" | "en">("th");
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [showPassword, setShowPassword] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
 
-  const mutation = useMutation({
-    mutationFn: staffLoginApi,
+  const mutation = useMutation<StaffLoginResponse, Error, StaffLoginRequest>({
+    mutationFn: (vars) => staffLogin(vars),
     onSuccess: (data) => {
       if (data?.token) localStorage.setItem("authToken", data.token);
+      localStorage.removeItem("lastPath"); // never restore old path
       navigate({ to: "/dashboard", replace: true });
     },
     onError: (err: any) => setErrorMessage(err?.message ?? "Login error"),
@@ -127,10 +118,11 @@ export default function LoginPage() {
                   background: CHULA_ROSE_50,
                   borderColor: `${CHULA_PINK}30`,
                 }}
-              ></div>
+              />
             </div>
           </section>
 
+          {/* Right: Login form */}
           <section className="overflow-hidden rounded-2xl border border-rose-100 bg-white shadow-sm">
             <div
               className="border-b px-6 py-5"
@@ -181,7 +173,7 @@ export default function LoginPage() {
 
               <form onSubmit={onSubmit} className="mt-6 space-y-5">
                 {/* Username */}
-                <InputField
+                <TextField
                   id="username"
                   label={tab === "student" ? "รหัสนิสิต (10 หลัก)" : "Username"}
                   placeholder={
@@ -198,59 +190,17 @@ export default function LoginPage() {
                 />
 
                 {/* Password */}
-                <div>
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <label
-                      htmlFor="password"
-                      className="block text-sm font-medium text-slate-900"
-                    >
-                      รหัสผ่าน
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((s) => !s)}
-                      className="inline-flex select-none items-center gap-1 text-xs transition"
-                      style={{ color: CHULA_PINK }}
-                      aria-pressed={showPassword}
-                    >
-                      {showPassword ? (
-                        <>
-                          <EyeOffIcon className="h-4 w-4" /> ซ่อน
-                        </>
-                      ) : (
-                        <>
-                          <EyeIcon className="h-4 w-4" /> แสดง
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="relative">
-                    <input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="กรอกรหัสผ่าน"
-                      className="w-full rounded-xl border bg-white px-3 py-2 pr-10 text-slate-900 outline-none transition placeholder:text-slate-400"
-                      style={{
-                        borderColor: `${CHULA_PINK}33`,
-                        boxShadow: `0 0 0 0 rgba(0,0,0,0)`,
-                      }}
-                      onFocus={(e) =>
-                        (e.currentTarget.style.boxShadow = `0 0 0 6px ${CHULA_PINK}14`)
-                      }
-                      onBlur={(e) =>
-                        (e.currentTarget.style.boxShadow = `0 0 0 0 rgba(0,0,0,0)`)
-                      }
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      autoComplete="current-password"
-                      required
-                    />
-                    <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-                      <LockIcon className="h-5 w-5 text-slate-400" />
-                    </div>
-                  </div>
-                </div>
+                <PasswordField
+                  id="password"
+                  label="รหัสผ่าน"
+                  placeholder="กรอกรหัสผ่าน"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  brandColor={CHULA_PINK}
+                  required
+                  left={<LockIcon className="h-5 w-5 text-slate-400" />}
+                />
 
                 {/* Error */}
                 {errorMessage && (
@@ -296,40 +246,7 @@ export default function LoginPage() {
   );
 }
 
-/* ---------- Reusable UI ---------- */
-
-function InputField(
-  props: React.InputHTMLAttributes<HTMLInputElement> & {
-    label: string;
-    brandColor: string;
-  }
-) {
-  const { label, brandColor, className, ...rest } = props;
-  return (
-    <div>
-      <label
-        htmlFor={props.id}
-        className="mb-1.5 block text-sm font-medium text-slate-900"
-      >
-        {label}
-      </label>
-      <input
-        {...rest}
-        className={
-          "w-full rounded-xl border bg-white px-3 py-2 text-slate-900 outline-none transition placeholder:text-slate-400 " +
-          (className ?? "")
-        }
-        style={{ borderColor: `${brandColor}33` }}
-        onFocus={(e) =>
-          (e.currentTarget.style.boxShadow = `0 0 0 6px ${brandColor}14`)
-        }
-        onBlur={(e) =>
-          (e.currentTarget.style.boxShadow = `0 0 0 0 rgba(0,0,0,0)`)
-        }
-      />
-    </div>
-  );
-}
+/* ---------- Small UI bits ---------- */
 
 function InfoItem({
   emoji,
@@ -392,7 +309,6 @@ function ChulaCrest(props: React.SVGProps<SVGSVGElement> & { color?: string }) {
   const { color = CHULA_PINK, ...rest } = props;
   return (
     <svg viewBox="0 0 64 64" fill="none" {...rest} aria-hidden="true">
-      {/* abstract crest (not official logo) */}
       <path
         d="M32 6c6 7 16 9 16 20 0 9-7 16-16 16S16 35 16 26C16 15 26 13 32 6Z"
         fill={color}
@@ -428,33 +344,7 @@ function LockIcon(props: React.SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-function EyeIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props} aria-hidden="true">
-      <path
-        d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"
-        stroke="currentColor"
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth={1.6} />
-    </svg>
-  );
-}
-function EyeOffIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" {...props} aria-hidden="true">
-      <path
-        d="M3 3l18 18M10.6 10.7A3 3 0 0 0 12 15a3 3 0 0 0 3-3 3 3 0 0 0-3-3c-.5 0-1 .1-1.4.3M6.2 6.7C3.9 8.3 2 12 2 12s3.5 7 10 7c2.1 0 3.9-.5 5.4-1.3M17.8 7.3C19.5 8.3 21 10 22 12c0 0-3.5 7-10 7"
-        stroke="currentColor"
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+
 function ArrowRightIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" {...props} aria-hidden="true">

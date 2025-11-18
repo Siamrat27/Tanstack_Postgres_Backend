@@ -1,20 +1,30 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 
-function hasToken() {
-  if (typeof window === "undefined") return false;
+function getToken() {
+  if (typeof window === "undefined") return null;
   try {
-    return !!localStorage.getItem("authToken");
+    return localStorage.getItem("authToken");
   } catch {
-    return false;
+    return null;
   }
 }
 
 export const Route = createFileRoute("/")({
-  beforeLoad: () => {
-    if (hasToken()) {
-      throw redirect({ to: "/dashboard" });
-    }
-    throw redirect({ to: "/login" });
-  },
-  component: () => <div style={{ padding: 16 }}>Loading…</div>,
+  component: IndexRedirector,
 });
+
+function IndexRedirector() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = getToken();
+    if (token) {
+      navigate({ to: "/dashboard", replace: true });
+    } else {
+      navigate({ to: "/login", replace: true });
+    }
+  }, [navigate]);
+
+  return <div style={{ padding: 16 }}>Loading…</div>;
+}
