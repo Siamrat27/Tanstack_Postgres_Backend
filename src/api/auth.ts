@@ -5,20 +5,26 @@ export type StaffLoginRequest = {
 };
 
 export type StaffLoginResponse = {
+  success?: boolean;
   token: string;
-  // add more fields if your backend returns them
+  user?: {
+    id: number;
+    username: string;
+    role: string;
+  };
 };
 
 export async function staffLogin(
   variables: StaffLoginRequest,
   opts?: { signal?: AbortSignal }
 ): Promise<StaffLoginResponse> {
-  const res = await fetch("/api/login", {
+  const res = await fetch("/api/login/staff", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(variables),
     signal: opts?.signal,
   });
+
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error((data as any)?.error || "Login failed");
