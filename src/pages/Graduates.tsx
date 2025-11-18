@@ -1,7 +1,7 @@
 // /src/pages/Graduates.tsx
 import * as React from "react";
-import { useQuery } from "@tanstack/react-query";
-import { authFetch } from "@/lib/authFetch";
+import { useDiplomas } from "@/api/diplomas";
+import Table, { Column } from "@/components/Table";
 
 type Diploma = {
   id: number;
@@ -10,22 +10,8 @@ type Diploma = {
   degree_th: string;
 };
 
-type DiplomasResponse = {
-  success: boolean;
-  data: Diploma[];
-};
-
-async function fetchDiplomas(): Promise<DiplomasResponse> {
-  return authFetch<DiplomasResponse>("/api/diplomas");
-}
-
 export function GraduatesPage() {
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["diplomas"],
-    queryFn: fetchDiplomas,
-    staleTime: 60_000,
-    retry: 1,
-  });
+  const { data, isLoading, isError, error, refetch } = useDiplomas();
 
   if (isLoading) {
     return (
@@ -52,7 +38,14 @@ export function GraduatesPage() {
     );
   }
 
-  const diplomas = data?.data ?? [];
+  const diplomas: Diploma[] = data?.data ?? [];
+
+  const columns: Column<Diploma>[] = [
+    { header: "ID", accessor: "id", width: "100px", align: "left" },
+    { header: "คณะ (Code)", accessor: "faculty_code", width: "140px" },
+    { header: "สาขา (TH)", accessor: "major_th" },
+    { header: "ปริญญา (TH)", accessor: "degree_th" },
+  ];
 
   return (
     <div className="px-4 py-6">
@@ -62,34 +55,20 @@ export function GraduatesPage() {
         <strong>{diplomas.length.toLocaleString()}</strong> รายการ
       </p>
 
-      {diplomas.length === 0 ? (
-        <div className="mt-4 rounded-lg border border-rose-100 bg-white p-4 text-slate-600 shadow-sm">
-          ไม่พบข้อมูล Diploma (สำหรับสิทธิ์ของคุณ)
-        </div>
-      ) : (
-        <div className="mt-4 overflow-x-auto rounded-lg border border-rose-100 bg-white shadow-sm">
-          <table className="min-w-[640px] w-full border-collapse">
-            <thead className="bg-rose-50 text-left">
-              <tr>
-                <th className="px-3 py-2">ID</th>
-                <th className="px-3 py-2">คณะ (Code)</th>
-                <th className="px-3 py-2">สาขา (TH)</th>
-                <th className="px-3 py-2">ปริญญา (TH)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {diplomas.map((d) => (
-                <tr key={d.id} className="odd:bg-white even:bg-rose-50/30">
-                  <td className="px-3 py-2">{d.id}</td>
-                  <td className="px-3 py-2">{d.faculty_code}</td>
-                  <td className="px-3 py-2">{d.major_th}</td>
-                  <td className="px-3 py-2">{d.degree_th}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <div className="mt-4">
+        <Table<Diploma>
+          data={diplomas}
+          columns={columns}
+          rowKey="id"
+          striped
+          stickyHeader
+          empty={
+            <div className="text-slate-600">
+              ไม่พบข้อมูล Diploma (สำหรับสิทธิ์ของคุณ)
+            </div>
+          }
+        />
+      </div>
     </div>
   );
 }
