@@ -1,6 +1,7 @@
 // /src/components/Navbar.tsx
 import * as React from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query"; // ✅ เพิ่ม
 
 type JwtUser = {
   username?: string;
@@ -10,9 +11,13 @@ type JwtUser = {
 
 const NAV_LINKS: { to: string; label: string; roles?: string[] }[] = [
   { to: "/dashboard", label: "ภาพรวม" },
-  { to: "/graduates", label: "รายชื่อบัณฑิต", roles: ["admin", "supervisor"] },
-  { to: "/schedules", label: "บัณฑิตซ้อมนอกรอบ" },
-  { to: "/settings", label: "ปรับตั้งค่า", roles: ["supervisor", "admin"] },
+  {
+    to: "/graduates",
+    label: "รายชื่อบัณฑิต",
+    roles: ["supervisor", "professor"],
+  },
+  { to: "/extra", label: "บัณฑิตซ้อมนอกรอบ" },
+  { to: "/settings", label: "ปรับตั้งค่า", roles: ["supervisor"] },
 ];
 
 const isBrowser = typeof window !== "undefined";
@@ -29,13 +34,20 @@ function safeClearToken() {
   if (!isBrowser) return;
   try {
     window.localStorage.removeItem("authToken");
+    // กระตุ้นการ re-render ของ listener อื่น ๆ (optional)
+    window.localStorage.setItem("auth:nonce", String(Date.now()));
+    window.localStorage.removeItem("auth:nonce");
   } catch {}
 }
 function decodeJwtUser(token: string | null): JwtUser | null {
   if (!token) return null;
   try {
     const [, payload] = token.split(".");
-    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    if (!payload) return null;
+    // base64url -> base64 + padding (กัน payload ไม่มี padding)
+    let b64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    const json = atob(b64);
     return JSON.parse(json);
   } catch {
     return null;
@@ -45,8 +57,9 @@ function decodeJwtUser(token: string | null): JwtUser | null {
 export default function Navbar() {
   const navigate = useNavigate();
   const { location } = useRouterState();
-  const [open, setOpen] = React.useState(false);
+  const queryClient = useQueryClient(); // ✅ เพิ่ม
 
+  const [open, setOpen] = React.useState(false);
   const isAuthDisabled =
     location.pathname === "/" || location.pathname.startsWith("/login");
   const [token, setToken] = React.useState<string | null>(null);
@@ -54,6 +67,7 @@ export default function Navbar() {
   React.useEffect(() => {
     if (!isAuthDisabled) setToken(safeGetToken());
   }, [isAuthDisabled]);
+
   React.useEffect(() => {
     if (!isBrowser || isAuthDisabled) return;
     const onStorage = (e: StorageEvent) => {
@@ -78,7 +92,9 @@ export default function Navbar() {
       : [];
 
   const onLogout = () => {
+    queryClient.clear();
     safeClearToken();
+    setToken(null);
     navigate({ to: "/", replace: true });
   };
 
@@ -301,11 +317,8 @@ function UserMenu({
 
 function RoleBadge({ role }: { role: string }) {
   const map: Record<string, string> = {
-    admin: "bg-emerald-100 text-emerald-700",
     supervisor: "bg-fuchsia-100 text-fuchsia-700",
-    registry: "bg-sky-100 text-sky-700",
-    faculty: "bg-violet-100 text-violet-700",
-    helpdesk: "bg-amber-100 text-amber-800",
+    professor: "bg-indigo-100 text-indigo-700",
     staff: "bg-rose-100 text-rose-700",
     guest: "bg-slate-100 text-slate-700",
   };

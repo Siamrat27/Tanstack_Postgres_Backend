@@ -2,9 +2,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { prisma } from "@/db";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken"; // <-- 1. Import jwt
+import jwt from "jsonwebtoken";
 
-export const Route = createFileRoute("/api/login")({
+export const Route = createFileRoute("/api/login/staff")({
   server: {
     handlers: {
       POST: async ({ request }) => {
@@ -55,7 +55,7 @@ export const Route = createFileRoute("/api/login")({
         // --- 5. Login สำเร็จ: สร้าง JWT Token ---
         const secret = process.env.JWT_SECRET;
         if (!secret) {
-            console.error("JWT_SECRET is not defined in .env file");
+            // console.error("JWT_SECRET is not defined in .env file");
             return new Response(JSON.stringify({
                 success: false,
                 error: "Server configuration error",

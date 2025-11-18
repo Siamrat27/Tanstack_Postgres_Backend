@@ -69,9 +69,10 @@ export const Route = createFileRoute("/api/diplomas/")({
 
           const diplomas = await prisma.diploma.findMany({
             where: whereClause,
-            orderBy: {
-              id: "asc",
-            },
+            orderBy: [
+              {faculty_code: "asc"},
+              {id: "asc"}
+            ],
           });
 
           return new Response(JSON.stringify({ success: true, data: diplomas }), {

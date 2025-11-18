@@ -126,6 +126,17 @@ export const Route = createFileRoute("/api/diplomas/$id")({
             }
           }
 
+          if ((body['first_attend'] && body['second_attend']) || (body['extra_attend'])) {
+            dataToUpdate['eligible_receive'] = true;
+          } 
+
+          // เช็คว่ามีสิทธิ์รับปริญญาหรือไม่
+          else if (((body['first_attend'] === false || body['first_attend'] === undefined) || 
+                    (body['second_attend'] === false || body['second_attend'] === undefined)) && 
+                    (body['extra_attend'] === false || body['extra_attend'] === undefined)) {
+            dataToUpdate['eligible_receive'] = false;
+          }
+
           // Professor สามารถแก้ไขเฉพาะข้อมูลของ faculty ตัวเอง
           if (currentUser.role === "Professor") {
             const diploma = await prisma.diploma.findUnique({ where: { id: Number(params.id) } });

@@ -1,12 +1,11 @@
-// /src/routes/__root.tsx
 import * as React from "react";
 import {
   HeadContent,
   Scripts,
   createRootRouteWithContext,
   Link,
-  useNavigate, // ⬅️ add
-  useRouterState, // ⬅️ add
+  useNavigate,
+  useRouterState,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
@@ -19,6 +18,32 @@ import Navbar from "../components/Navbar";
 
 interface MyRouterContext {
   queryClient: QueryClient;
+}
+
+function decodeJwtPayload(token: string): any | null {
+  try {
+    const [, p] = token.split(".");
+    if (!p) return null;
+    let b64 = p.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    return JSON.parse(atob(b64));
+  } catch {
+    return null;
+  }
+}
+
+function getTokenSafe(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem("authToken");
+  } catch {
+    return null;
+  }
+}
+
+function buildClientRedirectString(): string {
+  if (typeof window === "undefined") return "/";
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
 }
 
 function NotFoundView() {
@@ -65,6 +90,87 @@ function RootError({ error }: { error: unknown }) {
   );
 }
 
+function ClientOnly({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => setMounted(true), []);
+  return mounted ? <>{children}</> : null;
+}
+
+function ClientAuthGate() {
+  const navigate = useNavigate();
+  const { location } = useRouterState();
+
+  // หน้า public ที่ไม่ต้องมี token
+  const isPublic = React.useMemo(() => {
+    const p = location.pathname;
+    return p === "/" || p.startsWith("/login");
+  }, [location.pathname]);
+
+  // กฎ role ต่อ path
+  const ROLE_RULES = React.useMemo(
+    () => [
+      { pattern: /^\/settings\/users(\/|$)/, roles: ["supervisor"] },
+      { pattern: /^\/settings(\/|$)/, roles: ["supervisor"] },
+      {
+        pattern: /^\/graduates(\/|$)/,
+        roles: ["supervisor", "professor"],
+      },
+    ],
+    []
+  );
+
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (isPublic) return;
+
+    const token = getTokenSafe();
+
+    if (!token) {
+      const redirectTo = buildClientRedirectString();
+      navigate({
+        to: "/login",
+        search: { redirect: redirectTo } as any,
+        replace: true,
+      });
+      return;
+    }
+
+    // ตรวจหมดอายุถ้ามี exp
+    const payload = decodeJwtPayload(token);
+    const nowSec = Math.floor(Date.now() / 1000);
+    if (payload?.exp && Number(payload.exp) < nowSec) {
+      try {
+        localStorage.removeItem("authToken");
+      } catch {}
+      const redirectTo = buildClientRedirectString();
+      navigate({
+        to: "/login",
+        search: { redirect: redirectTo } as any,
+        replace: true,
+      });
+      return;
+    }
+
+    // ตรวจ role เฉพาะ path ที่มีกฎ
+    const rule = ROLE_RULES.find((r) => r.pattern.test(location.pathname));
+    if (rule) {
+      const roleLc = String(payload?.role ?? "").toLowerCase();
+      if (!rule.roles.includes(roleLc)) {
+        navigate({ to: "/dashboard", replace: true });
+      }
+    }
+  }, [
+    location.pathname,
+    location.search,
+    location.hash,
+    isPublic,
+    navigate,
+    ROLE_RULES,
+  ]);
+
+  return null;
+}
+
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
     meta: [
@@ -79,84 +185,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   shellComponent: RootDocument,
 });
 
-/** ---------- Global Client Guard (จุดเดียวพอ) ---------- */
-function ClientAuthGate() {
-  const navigate = useNavigate();
-  const { location } = useRouterState();
-
-  // หน้า public ที่ไม่ต้องมี token
-  const isPublic = React.useMemo(() => {
-    const p = location.pathname;
-    return p === "/" || p.startsWith("/login");
-  }, [location.pathname]);
-
-  // กฎ role ราย path (แก้/เพิ่มได้ที่นี่)
-  const ROLE_RULES = React.useMemo(
-    () => [
-      { pattern: /^\/settings\/users(\/|$)/, roles: ["admin", "supervisor"] },
-      { pattern: /^\/settings(\/|$)/, roles: ["admin", "supervisor"] },
-      { pattern: /^\/graduates(\/|$)/, roles: ["admin", "supervisor"] },
-      // { pattern: /^\/attends(\/|$)/,     roles: [...] },
-      // { pattern: /^\/schedules(\/|$)/,   roles: [...] },
-    ],
-    []
-  );
-
-  React.useEffect(() => {
-    // client-only
-    if (typeof window === "undefined") return;
-
-    // อย่าแตะหน้า public
-    if (isPublic) return;
-
-    // อ่าน token
-    let token: string | null = null;
-    try {
-      token = localStorage.getItem("authToken");
-    } catch {}
-
-    // ไม่มี token → ส่งไป login พร้อมจำ path ปัจจุบัน
-    if (!token) {
-      navigate({
-        to: "/login",
-        search: {
-          redirect:
-            location.pathname +
-            (location.search ? location.search : "") +
-            (location.hash ? location.hash : ""),
-        } as any,
-        replace: true,
-      });
-      return;
-    }
-
-    // decode role
-    let roleLc = "";
-    try {
-      const [, payload] = token.split(".");
-      const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
-      roleLc = (JSON.parse(json)?.role ?? "").toString().toLowerCase();
-    } catch {
-      // token เสียรูป → ส่งไป login
-      navigate({
-        to: "/login",
-        search: { redirect: location.pathname } as any,
-        replace: true,
-      });
-      return;
-    }
-
-    // ตรวจ rule เฉพาะ path ที่กำหนด
-    const rule = ROLE_RULES.find((r) => r.pattern.test(location.pathname));
-    if (rule && !rule.roles.includes(roleLc)) {
-      // มี token แต่ role ไม่ผ่าน → ส่งกลับ dashboard
-      navigate({ to: "/dashboard", replace: true });
-    }
-  }, [location.pathname, isPublic, navigate, ROLE_RULES]);
-
-  return null;
-}
-
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
     <html lang="th" className="h-full">
@@ -164,7 +192,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body className="min-h-full text-slate-800 antialiased">
-        {/* พื้นหลัง */}
+        {/* BG */}
         <div
           aria-hidden
           className="fixed inset-0 -z-10 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat bg-fixed"
@@ -174,7 +202,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           className="fixed inset-0 -z-10 bg-white/70 backdrop-blur-[2px]"
         />
 
-        {/* ✅ Global client-side guard */}
         <ClientAuthGate />
 
         <Navbar />
@@ -183,16 +210,19 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           {children}
         </main>
 
-        <TanStackDevtools
-          config={{ position: "bottom-right" }}
-          plugins={[
-            {
-              name: "Tanstack Router",
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-            TanStackQueryDevtools,
-          ]}
-        />
+        <ClientOnly>
+          <TanStackDevtools
+            config={{ position: "bottom-right" }}
+            plugins={[
+              {
+                name: "Tanstack Router",
+                render: <TanStackRouterDevtoolsPanel />,
+              },
+              TanStackQueryDevtools,
+            ]}
+          />
+        </ClientOnly>
+
         <Scripts />
       </body>
     </html>

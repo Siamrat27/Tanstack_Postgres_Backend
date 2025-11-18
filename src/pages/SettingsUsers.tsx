@@ -1,25 +1,10 @@
-// /src/pages/SettingsUsers.tsx
+// src/pages/SettingsUsers.tsx
 import * as React from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { authFetch } from "@/lib/authFetch";
-import bcrypt from "bcryptjs";
-
-type UserRow = {
-  id: number;
-  username: string;
-  first_name: string | null;
-  last_name: string | null;
-  role: string;
-  faculty_code: string | null;
-  can_manage_undergrad_level?: boolean;
-  can_manage_graduate_level?: boolean;
-};
-
-type UsersResponse = { success: boolean; data: UserRow[] };
-
-async function fetchUsers(): Promise<UsersResponse> {
-  return authFetch<UsersResponse>("/api/users");
-}
+import { useMutation } from "@tanstack/react-query";
+import Table, { Column } from "@/components/Table";
+import { useUsers, patchUser, UserRow, createUser } from "@/api/users";
+import { TextField, PasswordField } from "@/components/TextField";
+import Dropdown from "@/components/Dropdown";
 
 function displayNameFromUsername(u: string) {
   return u
@@ -35,107 +20,113 @@ function getRoleLc() {
     const t = localStorage.getItem("authToken");
     if (!t) return "";
     const [, p] = t.split(".");
-    const json = atob(p.replace(/-/g, "+").replace(/_/g, "/"));
-    const { role } = JSON.parse(json);
+    if (!p) return "";
+    let b64 = p.replace(/-/g, "+").replace(/_/g, "/");
+    while (b64.length % 4) b64 += "=";
+    const { role } = JSON.parse(atob(b64));
     return (role ?? "").toString().toLowerCase();
   } catch {
     return "";
   }
 }
 
-async function patchUserApi(
-  id: number,
-  payload: Partial<{
-    password_hash: string; // ← ใช้ hash แล้วเท่านั้น
-    first_name: string | null;
-    last_name: string | null;
-    role: string;
-    faculty_code: string | null;
-    can_manage_undergrad_level: boolean;
-    can_manage_graduate_level: boolean;
-  }>
-) {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
-  const res = await fetch(`/api/users/${id}`, {
-    method: "PATCH",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(payload),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data?.error || "Update failed");
-  return data;
-}
-
 export function SettingsUsersPage() {
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["users.all"],
-    queryFn: fetchUsers,
-    staleTime: 60_000,
-    retry: 1,
-  });
+  const { data, isLoading, isError, error, refetch } = useUsers();
 
   const roleLc = getRoleLc();
-  const canEdit = roleLc === "admin" || roleLc === "supervisor";
+  const canEdit = roleLc === "supervisor";
 
-  // ---------- instant toggle for booleans ----------
   const [busyToggle, setBusyToggle] = React.useState<string | null>(null);
   const toggleMutation = useMutation({
     mutationFn: (vars: {
       id: number;
       field: "can_manage_graduate_level" | "can_manage_undergrad_level";
       value: boolean;
-    }) => patchUserApi(vars.id, { [vars.field]: vars.value } as any),
+    }) => patchUser(vars.id, { [vars.field]: vars.value } as any),
     onMutate: (vars) => setBusyToggle(`${vars.id}:${vars.field}`),
     onSettled: () => setBusyToggle(null),
     onSuccess: () => refetch(),
   });
 
-  // ---------- modal edit state ----------
   const [editOpen, setEditOpen] = React.useState(false);
   const [editRow, setEditRow] = React.useState<UserRow | null>(null);
   const [editForm, setEditForm] = React.useState<{
-    username: string; // read-only
+    username: string;
     first_name: string;
     last_name: string;
     role: string;
     faculty_code: string;
-    new_password: string; // plain text input → bcrypt on submit
+    new_password: string;
   }>({
     username: "",
     first_name: "",
     last_name: "",
-    role: "Staff",
+    role: "",
     faculty_code: "",
     new_password: "",
+  });
+
+  const [createForm, setCreateForm] = React.useState<{
+    username: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+    role: string;
+    faculty_code: string;
+    can_manage_undergrad_level: boolean;
+  }>({
+    username: "",
+    password: "",
+    first_name: "",
+    last_name: "",
+    role: "Supervisor",
+    faculty_code: "",
+    can_manage_undergrad_level: true,
   });
 
   const modalMutation = useMutation({
     mutationFn: async () => {
       if (!editRow) return;
-
       const payload: any = {
         first_name: editForm.first_name ?? "",
         last_name: editForm.last_name ?? "",
         role: editForm.role ?? "",
         faculty_code: editForm.faculty_code || null,
       };
-
-      // bcrypt only if user typed new password
       const plain = (editForm.new_password || "").trim();
-      if (plain.length > 0) {
-        const hash = await bcrypt.hash(plain, 10);
-        payload.password_hash = hash;
-      }
-
-      return patchUserApi(editRow.id, payload);
+      if (plain.length > 0) payload.password = plain;
+      return patchUser(editRow.id, payload);
     },
     onSuccess: () => {
       setEditOpen(false);
       setEditRow(null);
+      refetch();
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        username: createForm.username.trim(),
+        password: createForm.password,
+        first_name: createForm.first_name.trim(),
+        last_name: createForm.last_name.trim(),
+        role: createForm.role,
+        faculty_code: createForm.faculty_code.trim(),
+        can_manage_undergrad_level: createForm.can_manage_undergrad_level,
+      };
+      return createUser(payload);
+    },
+    onSuccess: () => {
+      setCreateForm({
+        username: "",
+        password: "",
+        first_name: "",
+        last_name: "",
+        role: "Supervisor",
+        faculty_code: "",
+        can_manage_undergrad_level: true,
+      });
       refetch();
     },
   });
@@ -146,17 +137,126 @@ export function SettingsUsersPage() {
       username: row.username,
       first_name: row.first_name ?? "",
       last_name: row.last_name ?? "",
-      role: row.role ?? "Staff",
+      role: row.role ?? "Supervisor",
       faculty_code: row.faculty_code ?? "",
       new_password: "",
     });
     setEditOpen(true);
   }
+
   function closeEdit() {
     if (modalMutation.isPending) return;
     setEditOpen(false);
     setEditRow(null);
   }
+
+  const columns = React.useMemo<Column<UserRow>[]>(() => {
+    return [
+      {
+        id: "idx",
+        header: "#",
+        width: "3.5rem",
+        accessor: (_row, idx) => idx + 1,
+        thClassName: "w-14",
+      },
+      {
+        id: "usernameDisplay",
+        header: "ชื่อผู้ใช้",
+        cell: (u) => (
+          <div>
+            <div className="font-medium">
+              {displayNameFromUsername(u.username)}
+            </div>
+            <div className="text-xs text-slate-500">{u.username}</div>
+          </div>
+        ),
+      },
+      {
+        id: "fullname",
+        header: "ชื่อ-นามสกุล",
+        cell: (u) => (
+          <span>
+            {u.first_name ?? ""} {u.last_name ?? ""}
+          </span>
+        ),
+      },
+      {
+        id: "isSupervisor",
+        header: "Supervisor",
+        width: "8rem",
+        cell: (u) => {
+          const r = String(u.role ?? "").toLowerCase();
+          const isSupervisorRole = r === "supervisor";
+          return <span>{isSupervisorRole ? "✓" : " "}</span>;
+        },
+      },
+      {
+        id: "gradToggle",
+        header: "จัดการบัณฑิต โท-เอก",
+        cell: (u) => {
+          const keyGrad = `${u.id}:can_manage_graduate_level`;
+          return (
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={!!u.can_manage_graduate_level}
+                disabled={!canEdit || busyToggle === keyGrad}
+                onChange={(e) =>
+                  toggleMutation.mutate({
+                    id: u.id,
+                    field: "can_manage_graduate_level",
+                    value: e.currentTarget.checked,
+                  })
+                }
+              />
+              <span>อนุญาต</span>
+            </label>
+          );
+        },
+      },
+      {
+        id: "underToggle",
+        header: "จัดการบัณฑิต ตรี",
+        cell: (u) => {
+          const keyUnder = `${u.id}:can_manage_undergrad_level`;
+          return (
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={!!u.can_manage_undergrad_level}
+                disabled={!canEdit || busyToggle === keyUnder}
+                onChange={(e) =>
+                  toggleMutation.mutate({
+                    id: u.id,
+                    field: "can_manage_undergrad_level",
+                    value: e.currentTarget.checked,
+                  })
+                }
+              />
+              <span>อนุญาต</span>
+            </label>
+          );
+        },
+      },
+      {
+        id: "actions",
+        header: "แก้ไข",
+        width: "10rem",
+        cell: (u) => (
+          <button
+            onClick={() => openEdit(u)}
+            disabled={!canEdit}
+            className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-sm hover:bg-rose-50 disabled:opacity-50"
+            title={canEdit ? "แก้ไขผู้ใช้" : "ต้องเป็น Admin หรือ Supervisor"}
+          >
+            แก้ไข
+          </button>
+        ),
+      },
+    ];
+  }, [canEdit, busyToggle, toggleMutation]);
+
+  /* ------------------------- early returns (after hooks) ------------------------- */
 
   if (isLoading) {
     return (
@@ -185,6 +285,8 @@ export function SettingsUsersPage() {
 
   const rows = data?.data ?? [];
 
+  /* ---------------------------------- render ---------------------------------- */
+
   return (
     <div className="px-4 py-6">
       <h1 className="text-2xl font-bold text-rose-900">ผู้ใช้ในระบบ</h1>
@@ -192,119 +294,127 @@ export function SettingsUsersPage() {
         ทั้งหมด <strong>{rows.length.toLocaleString()}</strong> รายการ
       </p>
 
-      {rows.length === 0 ? (
-        <div className="mt-4 rounded-lg border border-rose-100 bg-white p-4 text-slate-600 shadow-sm">
-          ไม่พบผู้ใช้ในระบบ
+      {/* ---------- ฟอร์มสร้างผู้ใช้ใหม่ ---------- */}
+      <div className="mt-4 rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
+        <h2 className="text-lg font-semibold text-rose-900">สร้างผู้ใช้ใหม่</h2>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <TextField
+            id="create-username"
+            label="ชื่อผู้ใช้"
+            value={createForm.username}
+            onChange={(e) =>
+              setCreateForm((f) => ({ ...f, username: e.target.value }))
+            }
+            brandColor="#E4007E"
+          />
+
+          <PasswordField
+            id="create-password"
+            label="รหัสผ่าน"
+            value={createForm.password}
+            onChange={(e) =>
+              setCreateForm((f) => ({ ...f, password: e.target.value }))
+            }
+            brandColor="#E4007E"
+          />
         </div>
-      ) : (
-        <div className="mt-4 overflow-x-auto rounded-lg border border-rose-100 bg-white shadow-sm">
-          <table className="min-w-[920px] w-full border-collapse">
-            <thead className="bg-rose-50 text-left">
-              <tr>
-                <th className="px-3 py-2 w-14">#</th>
-                <th className="px-3 py-2">ชื่อผู้ใช้</th>
-                <th className="px-3 py-2">ชื่อ-นามสกุล</th>
-                <th className="px-3 py-2">Supervisor</th>
-                <th className="px-3 py-2">จัดการบัณฑิต โท-เอก</th>
-                <th className="px-3 py-2">จัดการบัณฑิต ตรี</th>
-                <th className="px-3 py-2 w-40">แก้ไข</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((u, idx) => {
-                const isSupervisorRole =
-                  (u.role ?? "").toString().toLowerCase() === "supervisor" ||
-                  (u.role ?? "").toString().toLowerCase() === "admin";
 
-                const keyGrad = `${u.id}:can_manage_graduate_level`;
-                const keyUnder = `${u.id}:can_manage_undergrad_level`;
-
-                return (
-                  <tr
-                    key={u.id}
-                    className="odd:bg-white even:bg-rose-50/30 align-top"
-                  >
-                    {/* # */}
-                    <td className="px-3 py-2">{idx + 1}</td>
-
-                    {/* ชื่อผู้ใช้ (map จาก Username) */}
-                    <td className="px-3 py-2">
-                      <div className="font-medium">
-                        {displayNameFromUsername(u.username)}
-                      </div>
-                      <div className="text-xs text-slate-500">{u.username}</div>
-                    </td>
-
-                    {/* ชื่อ-นามสกุล */}
-                    <td className="px-3 py-2">
-                      {u.first_name ?? ""} {u.last_name ?? ""}
-                    </td>
-
-                    {/* Supervisor (✓ ถ้า role เป็น admin/supervisor) */}
-                    <td className="px-3 py-2">
-                      {isSupervisorRole ? "✓" : " "}
-                    </td>
-
-                    {/* จัดการบัณฑิต โท-เอก → can_manage_graduate_level */}
-                    <td className="px-3 py-2">
-                      <label className="inline-flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={!!u.can_manage_graduate_level}
-                          disabled={!canEdit || busyToggle === keyGrad}
-                          onChange={(e) =>
-                            toggleMutation.mutate({
-                              id: u.id,
-                              field: "can_manage_graduate_level",
-                              value: e.currentTarget.checked,
-                            })
-                          }
-                        />
-                        <span>อนุญาต</span>
-                      </label>
-                    </td>
-
-                    {/* จัดการบัณฑิต ตรี → can_manage_undergrad_level */}
-                    <td className="px-3 py-2">
-                      <label className="inline-flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={!!u.can_manage_undergrad_level}
-                          disabled={!canEdit || busyToggle === keyUnder}
-                          onChange={(e) =>
-                            toggleMutation.mutate({
-                              id: u.id,
-                              field: "can_manage_undergrad_level",
-                              value: e.currentTarget.checked,
-                            })
-                          }
-                        />
-                        <span>อนุญาต</span>
-                      </label>
-                    </td>
-
-                    {/* แก้ไข → เปิดโมดัล */}
-                    <td className="px-3 py-2">
-                      <button
-                        onClick={() => openEdit(u)}
-                        disabled={!canEdit}
-                        className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-sm hover:bg-rose-50 disabled:opacity-50"
-                        title={
-                          canEdit
-                            ? "แก้ไขผู้ใช้"
-                            : "ต้องเป็น Admin หรือ Supervisor"
-                        }
-                      >
-                        แก้ไข
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <TextField
+            id="create-first-name"
+            label="ชื่อ"
+            value={createForm.first_name}
+            onChange={(e) =>
+              setCreateForm((f) => ({ ...f, first_name: e.target.value }))
+            }
+            brandColor="#E4007E"
+          />
+          <TextField
+            id="create-last-name"
+            label="นามสกุล"
+            value={createForm.last_name}
+            onChange={(e) =>
+              setCreateForm((f) => ({ ...f, last_name: e.target.value }))
+            }
+            brandColor="#E4007E"
+          />
         </div>
-      )}
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Dropdown
+            id="create-role"
+            label="Role"
+            value={createForm.role}
+            onChange={(e) =>
+              setCreateForm((f) => ({ ...f, role: e.target.value }))
+            }
+            brandColor="#E4007E"
+            options={[
+              { value: "Supervisor", label: "Supervisor" },
+              { value: "Professor", label: "Professor" },
+            ]}
+          />
+
+          <TextField
+            id="create-faculty"
+            label="คณะ (code)"
+            value={createForm.faculty_code}
+            onChange={(e) =>
+              setCreateForm((f) => ({
+                ...f,
+                faculty_code: e.target.value,
+              }))
+            }
+            brandColor="#E4007E"
+          />
+        </div>
+
+        <div className="mt-3 flex items-center gap-3">
+          <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={createForm.can_manage_undergrad_level}
+              onChange={(e) =>
+                setCreateForm((f) => ({
+                  ...f,
+                  can_manage_undergrad_level: e.target.checked,
+                }))
+              }
+              disabled={!canEdit || createMutation.isPending}
+            />
+            <span>สามารถจัดการบัณฑิตตรี (can_manage_undergrad_level)</span>
+          </label>
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={() => createMutation.mutate()}
+            disabled={
+              !canEdit ||
+              createMutation.isPending ||
+              !createForm.username.trim() ||
+              !createForm.password.trim()
+            }
+            className="rounded-lg bg-rose-600 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {createMutation.isPending ? "กำลังสร้าง…" : "สร้างผู้ใช้"}
+          </button>
+        </div>
+      </div>
+
+      {/* ---------- ตารางผู้ใช้ ---------- */}
+      <div className="mt-4">
+        <Table<UserRow>
+          data={rows}
+          columns={columns}
+          rowKey="id"
+          striped
+          stickyHeader
+          tableClassName="min-w-[920px] w-full border-collapse"
+          empty={<div className="p-4 text-slate-600">ไม่พบผู้ใช้ในระบบ</div>}
+        />
+      </div>
 
       <div className="mt-4">
         <button
@@ -331,99 +441,76 @@ export function SettingsUsersPage() {
 
             <div className="mt-4 grid gap-3">
               {/* Username (read-only) */}
-              <div>
-                <label className="mb-1 block text-sm text-slate-600">
-                  ชื่อผู้ใช้
-                </label>
-                <input
-                  className="w-full cursor-not-allowed rounded-lg border border-rose-200 bg-slate-50 px-3 py-2 text-slate-500"
-                  value={editForm.username}
-                  disabled
-                />
-              </div>
+              <TextField
+                id="edit-username"
+                label="ชื่อผู้ใช้"
+                value={editForm.username}
+                disabled
+                brandColor="#E4007E"
+              />
 
               {/* First / Last name */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-sm text-slate-600">
-                    ชื่อ
-                  </label>
-                  <input
-                    className="w-full rounded-lg border border-rose-200 px-3 py-2"
-                    value={editForm.first_name}
-                    onChange={(e) =>
-                      setEditForm((f) => ({ ...f, first_name: e.target.value }))
-                    }
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm text-slate-600">
-                    นามสกุล
-                  </label>
-                  <input
-                    className="w-full rounded-lg border border-rose-200 px-3 py-2"
-                    value={editForm.last_name}
-                    onChange={(e) =>
-                      setEditForm((f) => ({ ...f, last_name: e.target.value }))
-                    }
-                  />
-                </div>
+                <TextField
+                  id="edit-first-name"
+                  label="ชื่อ"
+                  value={editForm.first_name}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, first_name: e.target.value }))
+                  }
+                  brandColor="#E4007E"
+                />
+                <TextField
+                  id="edit-last-name"
+                  label="นามสกุล"
+                  value={editForm.last_name}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, last_name: e.target.value }))
+                  }
+                  brandColor="#E4007E"
+                />
               </div>
 
               {/* Role + Faculty */}
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-sm text-slate-600">
-                    Role
-                  </label>
-                  <select
-                    className="w-full rounded-lg border border-rose-200 px-3 py-2"
-                    value={editForm.role}
-                    onChange={(e) =>
-                      setEditForm((f) => ({ ...f, role: e.target.value }))
-                    }
-                  >
-                    <option>Supervisor</option>
-                    <option>Faculty</option>
-                    <option>Professor</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm text-slate-600">
-                    คณะ (code)
-                  </label>
-                  <input
-                    className="w-full rounded-lg border border-rose-200 px-3 py-2"
-                    value={editForm.faculty_code}
-                    onChange={(e) =>
-                      setEditForm((f) => ({
-                        ...f,
-                        faculty_code: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
+                <Dropdown
+                  id="edit-role"
+                  label="Role"
+                  value={editForm.role}
+                  onChange={(e) =>
+                    setEditForm((f) => ({ ...f, role: e.target.value }))
+                  }
+                  brandColor="#E4007E"
+                  options={[
+                    { value: "Supervisor", label: "Supervisor" },
+                    { value: "Professor", label: "Professor" },
+                  ]}
+                />
+
+                <TextField
+                  id="edit-faculty"
+                  label="คณะ (code)"
+                  value={editForm.faculty_code}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      faculty_code: e.target.value,
+                    }))
+                  }
+                  brandColor="#E4007E"
+                />
               </div>
 
-              {/* New Password → bcrypt before submit */}
-              <div>
-                <label className="mb-1 block text-sm text-slate-600">
-                  รหัสผ่านใหม่
-                </label>
-                <input
-                  type="password"
-                  className="w-full rounded-lg border border-rose-200 px-3 py-2"
-                  placeholder="ปล่อยว่างถ้าไม่ต้องการเปลี่ยนรหัสผ่าน"
-                  value={editForm.new_password}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, new_password: e.target.value }))
-                  }
-                />
-                <div className="mt-1 text-xs text-slate-500">
-                  จะทำการเข้ารหัส (bcrypt) ทางฝั่งเบราว์เซอร์ก่อนส่งไปอัปเดต{" "}
-                  <code>password_hash</code>
-                </div>
-              </div>
+              <PasswordField
+                id="edit-password"
+                label="รหัสผ่านใหม่"
+                placeholder="รหัสผ่านใหม่ (เว้นว่างไว้หากไม่เปลี่ยนแปลง)"
+                value={editForm.new_password}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, new_password: e.target.value }))
+                }
+                brandColor="#E4007E"
+              />
             </div>
 
             <div className="mt-5 flex items-center justify-end gap-2">
