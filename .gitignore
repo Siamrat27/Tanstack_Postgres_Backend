@@ -80,5 +80,3 @@ coverage/
 *.tmp
 
 /src/routeTree.gen.ts
-package-lock.json
-package.json
