@@ -1,6 +1,6 @@
 // /src/pages/Login.tsx
 import * as React from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
   staffLogin,
@@ -15,6 +15,7 @@ const CHULA_ROSE_50 = "#FFF2F7";
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [tab, setTab] = React.useState<"student" | "staff">("staff");
   const [lang, setLang] = React.useState<"th" | "en">("th");
@@ -26,7 +27,8 @@ export default function LoginPage() {
     mutationFn: (vars) => staffLogin(vars),
     onSuccess: (data) => {
       if (data?.token) localStorage.setItem("authToken", data.token);
-      localStorage.removeItem("lastPath"); // never restore old path
+      queryClient.clear();
+      localStorage.removeItem("lastPath");
       navigate({ to: "/dashboard", replace: true });
     },
     onError: (err: any) => setErrorMessage(err?.message ?? "Login error"),
@@ -40,7 +42,6 @@ export default function LoginPage() {
 
   return (
     <div className="relative min-h-[calc(100vh-64px)] bg-white">
-      {/* Brand gradient background */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"
@@ -51,7 +52,6 @@ export default function LoginPage() {
             `linear-gradient(0deg, #fff, #fff)`,
         }}
       />
-      {/* Top brand bar */}
       <div
         className="absolute inset-x-0 top-0 h-1 -z-10"
         style={{
@@ -122,7 +122,6 @@ export default function LoginPage() {
             </div>
           </section>
 
-          {/* Right: Login form */}
           <section className="overflow-hidden rounded-2xl border border-rose-100 bg-white shadow-sm">
             <div
               className="border-b px-6 py-5"
@@ -147,7 +146,6 @@ export default function LoginPage() {
             </div>
 
             <div className="px-6 py-6">
-              {/* Segmented tabs */}
               <div
                 className="inline-flex rounded-2xl p-1"
                 style={{
@@ -172,7 +170,6 @@ export default function LoginPage() {
               </div>
 
               <form onSubmit={onSubmit} className="mt-6 space-y-5">
-                {/* Username */}
                 <TextField
                   id="username"
                   label={tab === "student" ? "รหัสนิสิต (10 หลัก)" : "Username"}
@@ -189,7 +186,6 @@ export default function LoginPage() {
                   required
                 />
 
-                {/* Password */}
                 <PasswordField
                   id="password"
                   label="รหัสผ่าน"
@@ -202,7 +198,6 @@ export default function LoginPage() {
                   left={<LockIcon className="h-5 w-5 text-slate-400" />}
                 />
 
-                {/* Error */}
                 {errorMessage && (
                   <div
                     role="alert"
@@ -218,7 +213,6 @@ export default function LoginPage() {
                   </div>
                 )}
 
-                {/* Submit */}
                 <button
                   type="submit"
                   disabled={mutation.isPending}
@@ -245,8 +239,6 @@ export default function LoginPage() {
     </div>
   );
 }
-
-/* ---------- Small UI bits ---------- */
 
 function InfoItem({
   emoji,
@@ -302,8 +294,6 @@ function TabButton({
     </button>
   );
 }
-
-/* ---------- Inline SVGs ---------- */
 
 function ChulaCrest(props: React.SVGProps<SVGSVGElement> & { color?: string }) {
   const { color = CHULA_PINK, ...rest } = props;

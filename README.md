@@ -55,9 +55,9 @@ npx prisma studio
 BEGIN;
 
 -- 2. ล้างข้อมูลเก่า (เรียงลำดับตาม Foreign Key) และ รีเซ็ต ID
-TRUNCATE 
-  "Attend", "Group", "Schedule", "Diploma", "Graduate", 
-  "User", "Faculty", "Round" 
+TRUNCATE
+  "Attend", "Group", "Schedule", "Diploma", "Graduate",
+  "User", "Faculty", "Round"
 RESTART IDENTITY CASCADE;
 
 -- 3. สร้างคณะ (Faculty) (ตาม List ล่าสุด)
@@ -87,26 +87,26 @@ INSERT INTO "Round" ("round_code", "time", "round_type") VALUES
 -- 5. สร้างผู้ใช้งาน (User)
 -- (ใช้ Bcrypt hash จริงของ 'password123' เพื่อให้ API 'login.ts' ทำงานได้)
 INSERT INTO "User" (
-  "username", "first_name", "last_name", "role", "faculty_code", 
-  "password_hash", "password_salt", 
+  "username", "first_name", "last_name", "role", "faculty_code",
+  "password_hash", "password_salt",
   "can_manage_undergrad_level", "can_manage_graduate_level"
 ) VALUES
-('admin01', 'แอดมิน', 'ระบบ', 'admin', NULL, 
- '$2b$10$fA.E.q.T.G.F.W.z.D.g.O.r.S.g.i.m.N.c.o.D.C.N.P.o.E.i.O.W', NULL, 
- false, false), 
+('admin01', 'แอดมิน', 'ระบบ', 'Supervisor', NULL,
+ '$2b$10$fA.E.q.T.G.F.W.z.D.g.O.r.S.g.i.m.N.c.o.D.C.N.P.o.E.i.O.W', NULL,
+ false, false),
 
-('staff_21', 'สมชาย', 'วิศวะ', 'Staff', '21', 
- '$2b$10$fA.E.q.T.G.F.W.z.D.g.O.r.S.g.i.m.N.c.o.D.C.N.P.o.E.i.O.W', NULL, 
+('staff_21', 'สมชาย', 'วิศวะ', 'Supervisor', 'NULL',
+ '$2b$10$fA.E.q.T.G.F.W.z.D.g.O.r.S.g.i.m.N.c.o.D.C.N.P.o.E.i.O.W', NULL,
  true, true),
 
-('staff_22', 'สมหญิง', 'อักษร', 'Staff', '22', 
- '$2b$10$fA.E.q.T.G.F.W.z.D.g.O.r.S.g.i.m.N.c.o.D.C.N.P.o.E.i.O.W', NULL, 
+('staff_22', 'สมหญิง', 'อักษร', 'Professor', '22',
+ '$2b$10$fA.E.q.T.G.F.W.z.D.g.O.r.S.g.i.m.N.c.o.D.C.N.P.o.E.i.O.W', NULL,
  true, false);
 
 -- 6. สร้างบัณฑิต (Graduate) 30 คน
 INSERT INTO "Graduate" (
-  "student_id", "prefix_th", "first_name_th", "last_name_th", 
-  "prefix_en", "first_name_en", "last_name_en", 
+  "student_id", "prefix_th", "first_name_th", "last_name_th",
+  "prefix_en", "first_name_en", "last_name_en",
   "citizen_id", "ccr_barcode"
 )
 SELECT
@@ -120,8 +120,8 @@ FROM generate_series(1, 30) AS i;
 -- 7. สร้างปริญญา (Diploma) 30 ใบ (เชื่อมโยงกับ Graduate)
 -- (เนื่องจากเรารีเซ็ต ID แล้ว 'graduate_id' ที่ i จะตรงกับ Graduate ที่ i)
 INSERT INTO "Diploma" (
-  "degree_th", "major_th", "major_en", 
-  "faculty_code", "honor", "order_no", "order_display", 
+  "degree_th", "major_th", "major_en",
+  "faculty_code", "honor", "order_no", "order_display",
   "graduate_id", "student_id"
 )
 SELECT
