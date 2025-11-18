@@ -24,7 +24,7 @@ export function SettingsPage() {
   React.useEffect(() => {
     setRole(decodeRole());
   }, []);
-  const canEdit = role === "admin" || role === "supervisor";
+  const canEdit = role === "supervisor";
 
   return (
     <div className="px-4 py-6">

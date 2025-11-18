@@ -1,3 +1,4 @@
+// src/api/users.ts
 import { authFetch } from "@/lib/authFetch";
 import { useQuery, queryOptions } from "@tanstack/react-query";
 
@@ -25,6 +26,17 @@ export type UserUpdatePayload = Partial<{
   can_manage_graduate_level: boolean;
 }>;
 
+// 👉 เพิ่ม type สำหรับสร้าง user ใหม่
+export type UserCreatePayload = {
+  username: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  faculty_code: string;
+  can_manage_undergrad_level: boolean;
+};
+
 // ---------- Query Keys ----------
 export const usersKeys = {
   all: ["users"] as const,
@@ -45,6 +57,17 @@ export async function patchUser(
 ) {
   return authFetch(`/api/users/${id}`, {
     method: "PATCH",
+    body: JSON.stringify(payload),
+    signal: opts?.signal,
+  });
+}
+
+export async function createUser(
+  payload: UserCreatePayload,
+  opts?: { signal?: AbortSignal }
+) {
+  return authFetch("/api/users", {
+    method: "POST",
     body: JSON.stringify(payload),
     signal: opts?.signal,
   });

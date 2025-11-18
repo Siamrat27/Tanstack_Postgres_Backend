@@ -1,11 +1,10 @@
-// /src/pages/SettingsUsers.tsx
+// src/pages/SettingsUsers.tsx
 import * as React from "react";
 import { useMutation } from "@tanstack/react-query";
 import Table, { Column } from "@/components/Table";
-import { useUsers, patchUser, UserRow } from "@/api/users";
+import { useUsers, patchUser, UserRow, createUser } from "@/api/users";
 import { TextField, PasswordField } from "@/components/TextField";
 import Dropdown from "@/components/Dropdown";
-/* ---------------------------- local helpers ---------------------------- */
 
 function displayNameFromUsername(u: string) {
   return u
@@ -15,7 +14,6 @@ function displayNameFromUsername(u: string) {
     .join(" ");
 }
 
-// base64url-safe decode of role (not a hook)
 function getRoleLc() {
   if (typeof window === "undefined") return "";
   try {
@@ -32,17 +30,12 @@ function getRoleLc() {
   }
 }
 
-/* ------------------------------- component ------------------------------ */
-
 export function SettingsUsersPage() {
-  // 1) data
   const { data, isLoading, isError, error, refetch } = useUsers();
 
-  // 2) auth/roles (not hooks)
   const roleLc = getRoleLc();
-  const canEdit = roleLc === "admin" || roleLc === "supervisor";
+  const canEdit = roleLc === "supervisor";
 
-  // 3) toggles
   const [busyToggle, setBusyToggle] = React.useState<string | null>(null);
   const toggleMutation = useMutation({
     mutationFn: (vars: {
@@ -55,7 +48,6 @@ export function SettingsUsersPage() {
     onSuccess: () => refetch(),
   });
 
-  // 4) edit modal state
   const [editOpen, setEditOpen] = React.useState(false);
   const [editRow, setEditRow] = React.useState<UserRow | null>(null);
   const [editForm, setEditForm] = React.useState<{
@@ -72,6 +64,24 @@ export function SettingsUsersPage() {
     role: "",
     faculty_code: "",
     new_password: "",
+  });
+
+  const [createForm, setCreateForm] = React.useState<{
+    username: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+    role: string;
+    faculty_code: string;
+    can_manage_undergrad_level: boolean;
+  }>({
+    username: "",
+    password: "",
+    first_name: "",
+    last_name: "",
+    role: "Supervisor",
+    faculty_code: "",
+    can_manage_undergrad_level: true,
   });
 
   const modalMutation = useMutation({
@@ -94,6 +104,33 @@ export function SettingsUsersPage() {
     },
   });
 
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        username: createForm.username.trim(),
+        password: createForm.password,
+        first_name: createForm.first_name.trim(),
+        last_name: createForm.last_name.trim(),
+        role: createForm.role,
+        faculty_code: createForm.faculty_code.trim(),
+        can_manage_undergrad_level: createForm.can_manage_undergrad_level,
+      };
+      return createUser(payload);
+    },
+    onSuccess: () => {
+      setCreateForm({
+        username: "",
+        password: "",
+        first_name: "",
+        last_name: "",
+        role: "Supervisor",
+        faculty_code: "",
+        can_manage_undergrad_level: true,
+      });
+      refetch();
+    },
+  });
+
   function openEdit(row: UserRow) {
     setEditRow(row);
     setEditForm({
@@ -106,13 +143,13 @@ export function SettingsUsersPage() {
     });
     setEditOpen(true);
   }
+
   function closeEdit() {
     if (modalMutation.isPending) return;
     setEditOpen(false);
     setEditRow(null);
   }
 
-  // 5) columns (HOOK must be before any early return)
   const columns = React.useMemo<Column<UserRow>[]>(() => {
     return [
       {
@@ -149,7 +186,7 @@ export function SettingsUsersPage() {
         width: "8rem",
         cell: (u) => {
           const r = String(u.role ?? "").toLowerCase();
-          const isSupervisorRole = r === "supervisor" || r === "admin";
+          const isSupervisorRole = r === "supervisor";
           return <span>{isSupervisorRole ? "✓" : " "}</span>;
         },
       },
@@ -257,6 +294,116 @@ export function SettingsUsersPage() {
         ทั้งหมด <strong>{rows.length.toLocaleString()}</strong> รายการ
       </p>
 
+      {/* ---------- ฟอร์มสร้างผู้ใช้ใหม่ ---------- */}
+      <div className="mt-4 rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
+        <h2 className="text-lg font-semibold text-rose-900">สร้างผู้ใช้ใหม่</h2>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <TextField
+            id="create-username"
+            label="ชื่อผู้ใช้"
+            value={createForm.username}
+            onChange={(e) =>
+              setCreateForm((f) => ({ ...f, username: e.target.value }))
+            }
+            brandColor="#E4007E"
+          />
+
+          <PasswordField
+            id="create-password"
+            label="รหัสผ่าน"
+            value={createForm.password}
+            onChange={(e) =>
+              setCreateForm((f) => ({ ...f, password: e.target.value }))
+            }
+            brandColor="#E4007E"
+          />
+        </div>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <TextField
+            id="create-first-name"
+            label="ชื่อ"
+            value={createForm.first_name}
+            onChange={(e) =>
+              setCreateForm((f) => ({ ...f, first_name: e.target.value }))
+            }
+            brandColor="#E4007E"
+          />
+          <TextField
+            id="create-last-name"
+            label="นามสกุล"
+            value={createForm.last_name}
+            onChange={(e) =>
+              setCreateForm((f) => ({ ...f, last_name: e.target.value }))
+            }
+            brandColor="#E4007E"
+          />
+        </div>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Dropdown
+            id="create-role"
+            label="Role"
+            value={createForm.role}
+            onChange={(e) =>
+              setCreateForm((f) => ({ ...f, role: e.target.value }))
+            }
+            brandColor="#E4007E"
+            options={[
+              { value: "Supervisor", label: "Supervisor" },
+              { value: "Professor", label: "Professor" },
+            ]}
+          />
+
+          <TextField
+            id="create-faculty"
+            label="คณะ (code)"
+            value={createForm.faculty_code}
+            onChange={(e) =>
+              setCreateForm((f) => ({
+                ...f,
+                faculty_code: e.target.value,
+              }))
+            }
+            brandColor="#E4007E"
+          />
+        </div>
+
+        <div className="mt-3 flex items-center gap-3">
+          <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={createForm.can_manage_undergrad_level}
+              onChange={(e) =>
+                setCreateForm((f) => ({
+                  ...f,
+                  can_manage_undergrad_level: e.target.checked,
+                }))
+              }
+              disabled={!canEdit || createMutation.isPending}
+            />
+            <span>สามารถจัดการบัณฑิตตรี (can_manage_undergrad_level)</span>
+          </label>
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={() => createMutation.mutate()}
+            disabled={
+              !canEdit ||
+              createMutation.isPending ||
+              !createForm.username.trim() ||
+              !createForm.password.trim()
+            }
+            className="rounded-lg bg-rose-600 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {createMutation.isPending ? "กำลังสร้าง…" : "สร้างผู้ใช้"}
+          </button>
+        </div>
+      </div>
+
+      {/* ---------- ตารางผู้ใช้ ---------- */}
       <div className="mt-4">
         <Table<UserRow>
           data={rows}

@@ -109,24 +109,22 @@ function ClientAuthGate() {
   // กฎ role ต่อ path
   const ROLE_RULES = React.useMemo(
     () => [
-      { pattern: /^\/settings\/users(\/|$)/, roles: ["admin", "supervisor"] },
-      { pattern: /^\/settings(\/|$)/, roles: ["admin", "supervisor"] },
+      { pattern: /^\/settings\/users(\/|$)/, roles: ["supervisor"] },
+      { pattern: /^\/settings(\/|$)/, roles: ["supervisor"] },
       {
         pattern: /^\/graduates(\/|$)/,
-        roles: ["admin", "supervisor", "professor"],
+        roles: ["supervisor", "professor"],
       },
-      // เพิ่มได้ตามต้องการ
     ],
     []
   );
 
   React.useEffect(() => {
     if (typeof window === "undefined") return;
-    if (isPublic) return; // ไม่แตะหน้า public
+    if (isPublic) return;
 
     const token = getTokenSafe();
 
-    // ไม่มี token → ส่งไป login แล้วจำ path
     if (!token) {
       const redirectTo = buildClientRedirectString();
       navigate({
@@ -204,7 +202,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           className="fixed inset-0 -z-10 bg-white/70 backdrop-blur-[2px]"
         />
 
-        {/* ✅ Global client-side guard */}
         <ClientAuthGate />
 
         <Navbar />
@@ -213,7 +210,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           {children}
         </main>
 
-        {/* Devtools render หลัง mount กัน hook-order mismatch */}
         <ClientOnly>
           <TanStackDevtools
             config={{ position: "bottom-right" }}

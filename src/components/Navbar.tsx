@@ -14,10 +14,10 @@ const NAV_LINKS: { to: string; label: string; roles?: string[] }[] = [
   {
     to: "/graduates",
     label: "รายชื่อบัณฑิต",
-    roles: ["admin", "supervisor", "professor"],
+    roles: ["supervisor", "professor"],
   },
   { to: "/extra", label: "บัณฑิตซ้อมนอกรอบ" },
-  { to: "/settings", label: "ปรับตั้งค่า", roles: ["supervisor", "admin"] },
+  { to: "/settings", label: "ปรับตั้งค่า", roles: ["supervisor"] },
 ];
 
 const isBrowser = typeof window !== "undefined";
@@ -317,11 +317,8 @@ function UserMenu({
 
 function RoleBadge({ role }: { role: string }) {
   const map: Record<string, string> = {
-    admin: "bg-emerald-100 text-emerald-700",
     supervisor: "bg-fuchsia-100 text-fuchsia-700",
-    registry: "bg-sky-100 text-sky-700",
     professor: "bg-indigo-100 text-indigo-700",
-    faculty: "bg-violet-100 text-violet-700",
     staff: "bg-rose-100 text-rose-700",
     guest: "bg-slate-100 text-slate-700",
   };
