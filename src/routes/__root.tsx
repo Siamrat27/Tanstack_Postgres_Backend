@@ -15,6 +15,7 @@ import appCss from "../styles.css?url";
 import type { QueryClient } from "@tanstack/react-query";
 
 import Navbar from "../components/Navbar";
+import { ToastProvider } from "../components/Toast";
 
 interface MyRouterContext {
   queryClient: QueryClient;
@@ -204,24 +205,26 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
         <ClientAuthGate />
 
-        <Navbar />
+        <ToastProvider>
+          <Navbar />
 
-        <main className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-4 sm:py-6">
-          {children}
-        </main>
+          <main className="mx-auto w-full max-w-7xl px-3 py-4 sm:px-4 sm:py-6">
+            {children}
+          </main>
 
-        <ClientOnly>
-          <TanStackDevtools
-            config={{ position: "bottom-right" }}
-            plugins={[
-              {
-                name: "Tanstack Router",
-                render: <TanStackRouterDevtoolsPanel />,
-              },
-              TanStackQueryDevtools,
-            ]}
-          />
-        </ClientOnly>
+          <ClientOnly>
+            <TanStackDevtools
+              config={{ position: "bottom-right" }}
+              plugins={[
+                {
+                  name: "Tanstack Router",
+                  render: <TanStackRouterDevtoolsPanel />,
+                },
+                TanStackQueryDevtools,
+              ]}
+            />
+          </ClientOnly>
+        </ToastProvider>
 
         <Scripts />
       </body>

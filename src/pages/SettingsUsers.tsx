@@ -3,8 +3,13 @@ import * as React from "react";
 import { useMutation } from "@tanstack/react-query";
 import Table, { Column } from "@/components/Table";
 import { useUsers, patchUser, UserRow, createUser } from "@/api/users";
-import { TextField, PasswordField } from "@/components/TextField";
-import Dropdown from "@/components/Dropdown";
+import { useToast } from "@/components/Toast";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import UserCreateForm, {
+  UserCreateFormState,
+} from "@/components/UserCreateForm";
+import UserEditModal, { UserEditFormState } from "@/components/UserEditModal";
+import Button from "@/components/Button";
 
 function displayNameFromUsername(u: string) {
   return u
@@ -32,11 +37,13 @@ function getRoleLc() {
 
 export function SettingsUsersPage() {
   const { data, isLoading, isError, error, refetch } = useUsers();
+  const toast = useToast();
 
   const roleLc = getRoleLc();
   const canEdit = roleLc === "supervisor";
 
   const [busyToggle, setBusyToggle] = React.useState<string | null>(null);
+
   const toggleMutation = useMutation({
     mutationFn: (vars: {
       id: number;
@@ -45,19 +52,20 @@ export function SettingsUsersPage() {
     }) => patchUser(vars.id, { [vars.field]: vars.value } as any),
     onMutate: (vars) => setBusyToggle(`${vars.id}:${vars.field}`),
     onSettled: () => setBusyToggle(null),
-    onSuccess: () => refetch(),
+    onSuccess: () => {
+      refetch();
+      toast.success("อัปเดตสิทธิ์ผู้ใช้สำเร็จ");
+    },
+    onError: (err: any) => {
+      toast.error(
+        err?.message ?? "ไม่สามารถอัปเดตสิทธิ์ของผู้ใช้ได้ กรุณาลองใหม่อีกครั้ง"
+      );
+    },
   });
 
   const [editOpen, setEditOpen] = React.useState(false);
   const [editRow, setEditRow] = React.useState<UserRow | null>(null);
-  const [editForm, setEditForm] = React.useState<{
-    username: string;
-    first_name: string;
-    last_name: string;
-    role: string;
-    faculty_code: string;
-    new_password: string;
-  }>({
+  const [editForm, setEditForm] = React.useState<UserEditFormState>({
     username: "",
     first_name: "",
     last_name: "",
@@ -66,15 +74,7 @@ export function SettingsUsersPage() {
     new_password: "",
   });
 
-  const [createForm, setCreateForm] = React.useState<{
-    username: string;
-    password: string;
-    first_name: string;
-    last_name: string;
-    role: string;
-    faculty_code: string;
-    can_manage_undergrad_level: boolean;
-  }>({
+  const [createForm, setCreateForm] = React.useState<UserCreateFormState>({
     username: "",
     password: "",
     first_name: "",
@@ -82,7 +82,11 @@ export function SettingsUsersPage() {
     role: "Supervisor",
     faculty_code: "",
     can_manage_undergrad_level: true,
+    can_manage_graduate_level: false,
   });
+
+  const [confirmCreateOpen, setConfirmCreateOpen] = React.useState(false);
+  const [confirmEditOpen, setConfirmEditOpen] = React.useState(false);
 
   const modalMutation = useMutation({
     mutationFn: async () => {
@@ -101,6 +105,12 @@ export function SettingsUsersPage() {
       setEditOpen(false);
       setEditRow(null);
       refetch();
+      toast.success("บันทึกข้อมูลผู้ใช้สำเร็จ");
+    },
+    onError: (err: any) => {
+      toast.error(
+        err?.message ?? "ไม่สามารถบันทึกข้อมูลผู้ใช้ได้ กรุณาลองใหม่อีกครั้ง"
+      );
     },
   });
 
@@ -114,6 +124,7 @@ export function SettingsUsersPage() {
         role: createForm.role,
         faculty_code: createForm.faculty_code.trim(),
         can_manage_undergrad_level: createForm.can_manage_undergrad_level,
+        can_manage_graduate_level: createForm.can_manage_graduate_level,
       };
       return createUser(payload);
     },
@@ -125,9 +136,17 @@ export function SettingsUsersPage() {
         last_name: "",
         role: "Supervisor",
         faculty_code: "",
-        can_manage_undergrad_level: true,
+        can_manage_undergrad_level: false,
+        can_manage_graduate_level: false,
       });
       refetch();
+      toast.success("สร้างผู้ใช้ใหม่สำเร็จ");
+    },
+    onError: (err: any) => {
+      toast.error(
+        err?.message ??
+          "ไม่สามารถสร้างผู้ใช้ใหม่ได้ กรุณาตรวจสอบข้อมูลแล้วลองอีกครั้ง"
+      );
     },
   });
 
@@ -243,20 +262,21 @@ export function SettingsUsersPage() {
         header: "แก้ไข",
         width: "10rem",
         cell: (u) => (
-          <button
+          <Button
             onClick={() => openEdit(u)}
             disabled={!canEdit}
-            className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-sm hover:bg-rose-50 disabled:opacity-50"
+            variant="outline"
+            size="sm"
             title={canEdit ? "แก้ไขผู้ใช้" : "ต้องเป็น Admin หรือ Supervisor"}
           >
             แก้ไข
-          </button>
+          </Button>
         ),
       },
     ];
   }, [canEdit, busyToggle, toggleMutation]);
 
-  /* ------------------------- early returns (after hooks) ------------------------- */
+  /* ------------------------- early returns ------------------------- */
 
   if (isLoading) {
     return (
@@ -273,12 +293,14 @@ export function SettingsUsersPage() {
     return (
       <div className="px-4 py-6 text-red-700">
         เกิดข้อผิดพลาด: {msg}
-        <button
+        <Button
           onClick={() => refetch()}
-          className="ml-3 rounded border border-red-200 px-2 py-1 text-sm hover:bg-red-50"
+          variant="outline"
+          size="sm"
+          className="ml-3 border-red-200 text-red-700 hover:bg-red-50"
         >
           ลองใหม่
-        </button>
+        </Button>
       </div>
     );
   }
@@ -290,120 +312,21 @@ export function SettingsUsersPage() {
   return (
     <div className="px-4 py-6">
       <h1 className="text-2xl font-bold text-rose-900">ผู้ใช้ในระบบ</h1>
+
+      {/* ฟอร์มสร้างผู้ใช้ใหม่ */}
+      <UserCreateForm
+        form={createForm}
+        setForm={setCreateForm}
+        canEdit={canEdit}
+        isSubmitting={createMutation.isPending}
+        onRequestSubmit={() => setConfirmCreateOpen(true)}
+      />
+
       <p className="mt-2 text-slate-600">
-        ทั้งหมด <strong>{rows.length.toLocaleString()}</strong> รายการ
+        ข้อมูลทั้งหมด <strong>{rows.length.toLocaleString()}</strong> รายการ
       </p>
 
-      {/* ---------- ฟอร์มสร้างผู้ใช้ใหม่ ---------- */}
-      <div className="mt-4 rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
-        <h2 className="text-lg font-semibold text-rose-900">สร้างผู้ใช้ใหม่</h2>
-
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <TextField
-            id="create-username"
-            label="ชื่อผู้ใช้"
-            value={createForm.username}
-            onChange={(e) =>
-              setCreateForm((f) => ({ ...f, username: e.target.value }))
-            }
-            brandColor="#E4007E"
-          />
-
-          <PasswordField
-            id="create-password"
-            label="รหัสผ่าน"
-            value={createForm.password}
-            onChange={(e) =>
-              setCreateForm((f) => ({ ...f, password: e.target.value }))
-            }
-            brandColor="#E4007E"
-          />
-        </div>
-
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <TextField
-            id="create-first-name"
-            label="ชื่อ"
-            value={createForm.first_name}
-            onChange={(e) =>
-              setCreateForm((f) => ({ ...f, first_name: e.target.value }))
-            }
-            brandColor="#E4007E"
-          />
-          <TextField
-            id="create-last-name"
-            label="นามสกุล"
-            value={createForm.last_name}
-            onChange={(e) =>
-              setCreateForm((f) => ({ ...f, last_name: e.target.value }))
-            }
-            brandColor="#E4007E"
-          />
-        </div>
-
-        <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <Dropdown
-            id="create-role"
-            label="Role"
-            value={createForm.role}
-            onChange={(e) =>
-              setCreateForm((f) => ({ ...f, role: e.target.value }))
-            }
-            brandColor="#E4007E"
-            options={[
-              { value: "Supervisor", label: "Supervisor" },
-              { value: "Professor", label: "Professor" },
-            ]}
-          />
-
-          <TextField
-            id="create-faculty"
-            label="คณะ (code)"
-            value={createForm.faculty_code}
-            onChange={(e) =>
-              setCreateForm((f) => ({
-                ...f,
-                faculty_code: e.target.value,
-              }))
-            }
-            brandColor="#E4007E"
-          />
-        </div>
-
-        <div className="mt-3 flex items-center gap-3">
-          <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={createForm.can_manage_undergrad_level}
-              onChange={(e) =>
-                setCreateForm((f) => ({
-                  ...f,
-                  can_manage_undergrad_level: e.target.checked,
-                }))
-              }
-              disabled={!canEdit || createMutation.isPending}
-            />
-            <span>สามารถจัดการบัณฑิตตรี (can_manage_undergrad_level)</span>
-          </label>
-        </div>
-
-        <div className="mt-4 flex justify-end">
-          <button
-            onClick={() => createMutation.mutate()}
-            disabled={
-              !canEdit ||
-              createMutation.isPending ||
-              !createForm.username.trim() ||
-              !createForm.password.trim()
-            }
-            className="rounded-lg bg-rose-600 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
-          >
-            {createMutation.isPending ? "กำลังสร้าง…" : "สร้างผู้ใช้"}
-          </button>
-        </div>
-      </div>
-
-      {/* ---------- ตารางผู้ใช้ ---------- */}
+      {/* ตารางผู้ใช้ */}
       <div className="mt-4">
         <Table<UserRow>
           data={rows}
@@ -417,121 +340,47 @@ export function SettingsUsersPage() {
       </div>
 
       <div className="mt-4">
-        <button
-          onClick={() => refetch()}
-          className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-sm hover:bg-rose-50"
-        >
+        <Button onClick={() => refetch()} variant="outline">
           รีเฟรชข้อมูล
-        </button>
+        </Button>
       </div>
 
-      {/* ---------- Modal ---------- */}
-      {editOpen && editRow && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          aria-modal="true"
-          role="dialog"
-        >
-          {/* backdrop */}
-          <div className="absolute inset-0 bg-black/40" onClick={closeEdit} />
-          {/* dialog */}
-          <div className="relative z-10 w-full max-w-xl rounded-2xl border border-rose-100 bg-white p-5 shadow-xl">
-            <h2 className="text-lg font-semibold text-rose-900">แก้ไขผู้ใช้</h2>
-            <p className="text-sm text-slate-600">ID: {editRow.id}</p>
+      {/* Modal แก้ไขผู้ใช้ */}
+      <UserEditModal
+        open={editOpen && !!editRow}
+        userId={editRow?.id}
+        form={editForm}
+        setForm={setEditForm}
+        canEdit={canEdit}
+        isSubmitting={modalMutation.isPending}
+        onClose={closeEdit}
+        onRequestSubmit={() => setConfirmEditOpen(true)}
+      />
 
-            <div className="mt-4 grid gap-3">
-              {/* Username (read-only) */}
-              <TextField
-                id="edit-username"
-                label="ชื่อผู้ใช้"
-                value={editForm.username}
-                disabled
-                brandColor="#E4007E"
-              />
+      {/* Confirm dialogs */}
+      <ConfirmDialog
+        open={confirmCreateOpen}
+        title="ยืนยันการสร้างผู้ใช้"
+        message={`คุณต้องการสร้างผู้ใช้ "${createForm.username.trim() || "ผู้ใช้ใหม่"}" ใช่หรือไม่`}
+        onCancel={() => setConfirmCreateOpen(false)}
+        onConfirm={() => {
+          setConfirmCreateOpen(false);
+          createMutation.mutate();
+        }}
+        loading={createMutation.isPending}
+      />
 
-              {/* First / Last name */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <TextField
-                  id="edit-first-name"
-                  label="ชื่อ"
-                  value={editForm.first_name}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, first_name: e.target.value }))
-                  }
-                  brandColor="#E4007E"
-                />
-                <TextField
-                  id="edit-last-name"
-                  label="นามสกุล"
-                  value={editForm.last_name}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, last_name: e.target.value }))
-                  }
-                  brandColor="#E4007E"
-                />
-              </div>
-
-              {/* Role + Faculty */}
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Dropdown
-                  id="edit-role"
-                  label="Role"
-                  value={editForm.role}
-                  onChange={(e) =>
-                    setEditForm((f) => ({ ...f, role: e.target.value }))
-                  }
-                  brandColor="#E4007E"
-                  options={[
-                    { value: "Supervisor", label: "Supervisor" },
-                    { value: "Professor", label: "Professor" },
-                  ]}
-                />
-
-                <TextField
-                  id="edit-faculty"
-                  label="คณะ (code)"
-                  value={editForm.faculty_code}
-                  onChange={(e) =>
-                    setEditForm((f) => ({
-                      ...f,
-                      faculty_code: e.target.value,
-                    }))
-                  }
-                  brandColor="#E4007E"
-                />
-              </div>
-
-              <PasswordField
-                id="edit-password"
-                label="รหัสผ่านใหม่"
-                placeholder="รหัสผ่านใหม่ (เว้นว่างไว้หากไม่เปลี่ยนแปลง)"
-                value={editForm.new_password}
-                onChange={(e) =>
-                  setEditForm((f) => ({ ...f, new_password: e.target.value }))
-                }
-                brandColor="#E4007E"
-              />
-            </div>
-
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button
-                onClick={closeEdit}
-                disabled={modalMutation.isPending}
-                className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-sm hover:bg-rose-50 disabled:opacity-60"
-              >
-                ยกเลิก
-              </button>
-              <button
-                onClick={() => modalMutation.mutate()}
-                disabled={!canEdit || modalMutation.isPending}
-                className="rounded-lg bg-rose-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-60"
-              >
-                {modalMutation.isPending ? "กำลังบันทึก…" : "บันทึก"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={confirmEditOpen}
+        title="ยืนยันการบันทึก"
+        message={`คุณต้องการบันทึกการแก้ไขผู้ใช้ "${editForm.username}" ใช่หรือไม่`}
+        onCancel={() => setConfirmEditOpen(false)}
+        onConfirm={() => {
+          setConfirmEditOpen(false);
+          modalMutation.mutate();
+        }}
+        loading={modalMutation.isPending}
+      />
     </div>
   );
 }
